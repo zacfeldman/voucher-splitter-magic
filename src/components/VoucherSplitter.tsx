@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
-import { ValidateVoucherResponse, DesiredVoucher } from '@/types/voucher';
-import { splitVoucher } from '@/services/voucherApi';
+import { ValidateVoucherResponse } from '@/types/voucher';
 import { toast } from '@/hooks/use-toast';
 
 interface VoucherSplitterProps {
@@ -59,28 +58,31 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
     }
 
     setIsSplitting(true);
-    try {
-      const splitVouchers: DesiredVoucher[] = splits.map(valueCents => ({ ValueCents: valueCents }));
-      const response = await splitVoucher({
-        pin: voucherPin,
-        splitVouchers
-      });
+    
+    // Mock the API response for testing
+    setTimeout(() => {
+      const mockSplitVouchers = splits.map((amount, index) => ({
+        requestId: `req-${Date.now()}-${index}`,
+        reference: `REF${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+        amount: amount,
+        dateTime: new Date().toISOString(),
+        token: `${Math.random().toString().substr(2, 4)} ${Math.random().toString().substr(2, 4)} ${Math.random().toString().substr(2, 4)} ${Math.random().toString().substr(2, 4)}`,
+        serialNumber: `BL${Math.random().toString(36).substr(2, 12).toUpperCase()}`,
+        expiryDateTime: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        barcode: `${Math.random().toString().substr(2, 13)}`,
+        productName: "Blue Label Airtime Voucher",
+        productInstructions: "TO RECHARGE DIAL: *130*TOKEN#",
+        productHelp: "Customer Care: SMS 'help' to 30505",
+        customerMessage: "No Refunds - Vouchers cannot be reprinted"
+      }));
 
-      onSplitComplete(response.SplitVouchers);
+      onSplitComplete(mockSplitVouchers);
       toast({
         title: "Success",
-        description: "Voucher split successfully",
+        description: "Voucher split successfully (mock data)",
       });
-    } catch (error) {
-      console.error('Split error:', error);
-      toast({
-        title: "Split Failed",
-        description: error instanceof Error ? error.message : "Failed to split voucher",
-        variant: "destructive",
-      });
-    } finally {
       setIsSplitting(false);
-    }
+    }, 2000);
   };
 
   return (
@@ -182,7 +184,7 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
                   Splitting...
                 </>
               ) : (
-                'Split Voucher'
+                'Split Voucher (Mock)'
               )}
             </Button>
           </div>
