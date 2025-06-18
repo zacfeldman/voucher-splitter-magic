@@ -1,22 +1,57 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import VoucherValidator from './VoucherValidator';
 import VoucherSplitter from './VoucherSplitter';
 import SplitResults from './SplitResults';
 import { ValidateVoucherResponse, VariableVoucherVendJsonResponse } from '@/types/voucher';
+import { fetchAuthToken } from '@/services/voucherApi';
+import { toast } from '@/hooks/use-toast';
 
 type AppStep = 'validate' | 'split' | 'results';
 
+// Vite provides import.meta.env for environment variables
+const isTestMode = import.meta.env.VITE_TEST_MODE === 'true';
+
 const VoucherSplitApp: React.FC = () => {
-  // For testing: start directly with split step and mock voucher data
-  const [currentStep, setCurrentStep] = useState<AppStep>('split');
-  const [validatedVoucher, setValidatedVoucher] = useState<ValidateVoucherResponse | null>({
-    SerialNumber: "BL016C1E46AD2768",
-    VoucherStatus: "Active",
-    ValueCents: 10000, // R100.00
-    VoucherCanBeSplit: true
-  });
-  const [voucherPin, setVoucherPin] = useState<string>('1234567890');
+  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [loadingAuth, setLoadingAuth] = useState<boolean>(true);
+
+  useEffect(() => {
+    const getAuthToken = async () => {
+      try {
+        const token = await fetchAuthToken();
+        setAuthToken(token);
+      } catch (error) {
+        console.error("Failed to fetch authentication token:", error);
+        toast({
+          title: "Authentication Error",
+          description: "Failed to get API access token. Check console for details.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingAuth(false);
+      }
+    };
+
+    if (!isTestMode) {
+      getAuthToken();
+    } else {
+      setLoadingAuth(false);
+    }
+  }, [isTestMode]);
+
+  // Use test mode if enabled, otherwise start in normal mode
+  const [currentStep, setCurrentStep] = useState<AppStep>(isTestMode ? 'split' : 'validate');
+  const [validatedVoucher, setValidatedVoucher] = useState<ValidateVoucherResponse | null>(
+    isTestMode
+      ? {
+          SerialNumber: "BL016C1E46AD2768",
+          VoucherStatus: "Active",
+          ValueCents: 10000, // R100.00
+          VoucherCanBeSplit: true
+        }
+      : null
+  );
+  const [voucherPin, setVoucherPin] = useState<string>(isTestMode ? '1234567890' : '');
   const [splitVouchers, setSplitVouchers] = useState<VariableVoucherVendJsonResponse[]>([]);
 
   const handleVoucherValidated = (voucher: ValidateVoucherResponse, pin: string) => {
@@ -31,19 +66,26 @@ const VoucherSplitApp: React.FC = () => {
   };
 
   const handleStartOver = () => {
-    setCurrentStep('split'); // Start with split for testing
-    setValidatedVoucher({
-      SerialNumber: "BL016C1E46AD2768",
-      VoucherStatus: "Active",
-      ValueCents: 10000, // R100.00
-      VoucherCanBeSplit: true
-    });
-    setVoucherPin('1234567890');
-    setSplitVouchers([]);
+    if (isTestMode) {
+      setCurrentStep('split');
+      setValidatedVoucher({
+        SerialNumber: "BL016C1E46AD2768",
+        VoucherStatus: "Active",
+        ValueCents: 10000, // R100.00
+        VoucherCanBeSplit: true
+      });
+      setVoucherPin('1234567890');
+      setSplitVouchers([]);
+    } else {
+      setCurrentStep('validate');
+      setValidatedVoucher(null);
+      setVoucherPin('');
+      setSplitVouchers([]);
+    }
   };
 
   const handleBack = () => {
-    setCurrentStep('split'); // Go back to split for testing
+    setCurrentStep(isTestMode ? 'split' : 'validate');
   };
 
   return (
@@ -57,9 +99,11 @@ const VoucherSplitApp: React.FC = () => {
           <p className="text-xl text-muted-foreground">
             Split your vouchers into smaller denominations with ease
           </p>
-          <p className="text-sm text-orange-600 mt-2">
-            Testing Mode: Using mock R100 voucher
-          </p>
+          {isTestMode && (
+            <p className="text-sm text-orange-600 mt-2">
+              Testing Mode: Using mock R100 voucher
+            </p>
+          )}
         </div>
 
         {/* Progress Indicator - Modified for testing */}
@@ -85,8 +129,12 @@ const VoucherSplitApp: React.FC = () => {
         </div>
 
         {/* Step Content */}
-        {currentStep === 'validate' && (
-          <VoucherValidator onVoucherValidated={handleVoucherValidated} />
+        {loadingAuth && !isTestMode ? (
+          <div className="text-center text-lg text-blue-600 mt-10">
+            Loading authentication...
+          </div>
+        ) : currentStep === 'validate' && (
+          <VoucherValidator onVoucherValidated={handleVoucherValidated} authToken={authToken} />
         )}
 
         {currentStep === 'split' && validatedVoucher && (
@@ -95,6 +143,7 @@ const VoucherSplitApp: React.FC = () => {
             voucherPin={voucherPin}
             onSplitComplete={handleSplitComplete}
             onBack={handleBack}
+            authToken={authToken}
           />
         )}
 

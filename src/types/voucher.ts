@@ -1,4 +1,3 @@
-
 export interface ValidateVoucherRequest {
   pin: string;
 }
@@ -36,6 +35,7 @@ export interface VariableVoucherVendJsonResponse {
 
 export interface SplitVoucherResponse {
   SplitVouchers: VariableVoucherVendJsonResponse[];
+  message?: string;
 }
 
 export interface ErrorResponse {

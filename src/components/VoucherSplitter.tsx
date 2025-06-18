@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,21 +6,25 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
 import { ValidateVoucherResponse } from '@/types/voucher';
 import { toast } from '@/hooks/use-toast';
+import { splitVoucher } from '@/services/voucherApi';
 
 interface VoucherSplitterProps {
   validatedVoucher: ValidateVoucherResponse;
   voucherPin: string;
   onSplitComplete: (splitVouchers: any[]) => void;
   onBack: () => void;
+  authToken: string | null;
 }
 
 const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
   validatedVoucher,
   voucherPin,
   onSplitComplete,
-  onBack
+  onBack,
+  authToken
 }) => {
-  const [splits, setSplits] = useState<number[]>([]);
+  // Store splits as strings for raw user input
+  const [splits, setSplits] = useState<string[]>([]);
   const [isSplitting, setIsSplitting] = useState(false);
 
   const formatCurrency = (cents: number) => {
@@ -29,7 +32,7 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
   };
 
   const addSplit = () => {
-    setSplits([...splits, 0]);
+    setSplits([...splits, '']);
   };
 
   const removeSplit = (index: number) => {
@@ -37,15 +40,29 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
   };
 
   const updateSplit = (index: number, value: string) => {
-    const cents = Math.round(parseFloat(value || '0') * 100);
-    const newSplits = [...splits];
-    newSplits[index] = cents;
-    setSplits(newSplits);
+    setSplits(splits.map((v, i) => (i === index ? value : v)));
   };
 
-  const totalSplitValue = splits.reduce((sum, split) => sum + split, 0);
+  // Add this helper to format a string as a decimal with two places
+  const formatSplitValue = (value: string) => {
+    const num = parseFloat(value.replace(',', '.'));
+    if (isNaN(num)) return '';
+    return num.toFixed(2);
+  };
+
+  // Convert all splits to cents for calculations
+  const splitsInCents = splits.map((value) => {
+    const normalized = value.replace(',', '.');
+    const num = parseFloat(normalized);
+    return isNaN(num) ? 0 : Math.round(num * 100);
+  });
+
+  const totalSplitValue = splitsInCents.reduce((sum, split) => sum + split, 0);
   const remainingValue = validatedVoucher.ValueCents - totalSplitValue;
-  const isValidSplit = totalSplitValue === validatedVoucher.ValueCents && splits.every(split => split > 0);
+  const isValidSplit =
+    totalSplitValue === validatedVoucher.ValueCents &&
+    splitsInCents.length > 0 &&
+    splitsInCents.every(split => split > 0);
 
   const handleSplit = async () => {
     if (!isValidSplit) {
@@ -57,32 +74,38 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
       return;
     }
 
-    setIsSplitting(true);
-    
-    // Mock the API response for testing
-    setTimeout(() => {
-      const mockSplitVouchers = splits.map((amount, index) => ({
-        requestId: `req-${Date.now()}-${index}`,
-        reference: `REF${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-        amount: amount,
-        dateTime: new Date().toISOString(),
-        token: `${Math.random().toString().substr(2, 4)} ${Math.random().toString().substr(2, 4)} ${Math.random().toString().substr(2, 4)} ${Math.random().toString().substr(2, 4)}`,
-        serialNumber: `BL${Math.random().toString(36).substr(2, 12).toUpperCase()}`,
-        expiryDateTime: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-        barcode: `${Math.random().toString().substr(2, 13)}`,
-        productName: "Blue Label Airtime Voucher",
-        productInstructions: "TO RECHARGE DIAL: *130*TOKEN#",
-        productHelp: "Customer Care: SMS 'help' to 30505",
-        customerMessage: "No Refunds - Vouchers cannot be reprinted"
-      }));
+    if (authToken === null) {
+      toast({
+        title: "Authentication Error",
+        description: "API access token is not available.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      onSplitComplete(mockSplitVouchers);
+    setIsSplitting(true);
+    try {
+      const desiredVouchers = splitsInCents.map(amount => ({ ValueCents: amount }));
+      const response = await splitVoucher({
+        pin: voucherPin,
+        splitVouchers: desiredVouchers,
+      }, authToken);
+
+      onSplitComplete(response.SplitVouchers);
       toast({
         title: "Success",
-        description: "Voucher split successfully (mock data)",
+        description: response.message || "Voucher split successfully",
       });
+    } catch (error) {
+      console.error('Split error:', error);
+      toast({
+        title: "Split Failed",
+        description: error instanceof Error ? error.message : "Failed to split voucher",
+        variant: "destructive",
+      });
+    } finally {
       setIsSplitting(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -120,12 +143,24 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
               <div className="flex-1 relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">R</span>
                 <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
+                  pattern="^\\d*[.,]?\\d*$"
                   placeholder="0.00"
-                  value={split > 0 ? (split / 100).toFixed(2) : ''}
+                  value={split}
                   onChange={(e) => updateSplit(index, e.target.value)}
+                  onBlur={(e) => updateSplit(index, formatSplitValue(e.target.value))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addSplit();
+                      // Focus the new input after adding
+                      setTimeout(() => {
+                        const nextInput = document.querySelectorAll('input[type="text"][inputmode="decimal"]')[index + 1];
+                        if (nextInput) (nextInput as HTMLInputElement).focus();
+                      }, 0);
+                    }
+                  }}
                   className="pl-8"
                 />
               </div>
@@ -140,14 +175,32 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
             </div>
           ))}
 
-          <Button
-            variant="outline"
-            onClick={addSplit}
-            className="w-full border-dashed border-2 border-blue-300 text-blue-600 hover:bg-blue-50"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Split Amount
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={addSplit}
+              className="flex-1 border-dashed border-2 border-blue-300 text-blue-600 hover:bg-blue-50"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Split Amount
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                const emptyIndex = splits.findIndex(s => !s || s.trim() === '');
+                const remainingRand = (remainingValue / 100).toFixed(2);
+                if (emptyIndex !== -1) {
+                  updateSplit(emptyIndex, remainingRand);
+                } else {
+                  setSplits([...splits, remainingRand]);
+                }
+              }}
+              disabled={remainingValue <= 0}
+              className="flex-1 border-dashed border-2 border-green-300 text-green-700 hover:bg-green-50"
+            >
+              Add Remaining Amount
+            </Button>
+          </div>
 
           {/* Summary */}
           <div className="mt-6 p-4 bg-gray-50 rounded-lg space-y-2">
@@ -157,10 +210,7 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
             </div>
             <div className="flex justify-between">
               <span>Remaining:</span>
-              <span className={`font-semibold ${remainingValue === 0 ? 'text-green-600' : remainingValue < 0 ? 'text-red-600' : 'text-orange-600'}`}>
-                {formatCurrency(Math.abs(remainingValue))}
-                {remainingValue < 0 && ' (Over)'}
-              </span>
+              <span className={`font-semibold ${remainingValue === 0 ? 'text-green-600' : remainingValue < 0 ? 'text-red-600' : 'text-orange-600'}`}>{formatCurrency(Math.abs(remainingValue))}{remainingValue < 0 && ' (Over)'}</span>
             </div>
           </div>
 
@@ -184,7 +234,7 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
                   Splitting...
                 </>
               ) : (
-                'Split Voucher (Mock)'
+                'Split Voucher'
               )}
             </Button>
           </div>

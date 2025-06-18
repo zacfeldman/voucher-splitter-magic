@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,9 +10,10 @@ import { toast } from '@/hooks/use-toast';
 
 interface VoucherValidatorProps {
   onVoucherValidated: (voucher: ValidateVoucherResponse, pin: string) => void;
+  authToken: string | null;
 }
 
-const VoucherValidator: React.FC<VoucherValidatorProps> = ({ onVoucherValidated }) => {
+const VoucherValidator: React.FC<VoucherValidatorProps> = ({ onVoucherValidated, authToken }) => {
   const [pin, setPin] = useState('');
   const [isValidating, setIsValidating] = useState(false);
 
@@ -29,7 +29,10 @@ const VoucherValidator: React.FC<VoucherValidatorProps> = ({ onVoucherValidated 
 
     setIsValidating(true);
     try {
-      const response = await validateVoucher({ pin: pin.trim() });
+      if (authToken === null) {
+        throw new Error("Authentication token not available.");
+      }
+      const response = await validateVoucher({ pin: pin.trim() }, authToken);
       
       if (!response.VoucherCanBeSplit) {
         toast({
@@ -79,7 +82,7 @@ const VoucherValidator: React.FC<VoucherValidatorProps> = ({ onVoucherValidated 
             type="text"
             placeholder="Enter voucher PIN"
             value={pin}
-            onChange={(e) => setPin(e.target.value)}
+            onChange={(e) => setPin(e.target.value.trim())}
             onKeyPress={(e) => e.key === 'Enter' && handleValidate()}
             disabled={isValidating}
             className="text-center text-lg tracking-wider"
