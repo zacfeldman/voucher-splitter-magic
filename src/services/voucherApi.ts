@@ -3,7 +3,7 @@ import { ValidateVoucherRequest, ValidateVoucherResponse, SplitVoucherRequest, S
 const API_BASE_URL = '/api-split/vouchersplitservice/v1';
 const ALTERNATIVE_API_URL = '/api/v2/trade/voucher/variable/vouchers';
 const TOKEN_BASE_URL = 'https://api.qa.bluelabeltelecoms.co.za';
-const TOKEN_URL = '/api/token';
+const TOKEN_URL = '/token';
 
 // Read Client ID and Secret from environment variables
 const CLIENT_ID = import.meta.env.VITE_CLIENT_ID;
@@ -16,12 +16,15 @@ const getAuthHeaders = (authToken: string) => {
 };
 
 export const fetchAuthToken = async (): Promise<string> => {
-  // Hardcoded credentials are no longer needed in the frontend; the serverless function will handle them.
-  const response = await fetch(TOKEN_URL, {
+  // Hardcoded credentials for debugging (updated client_id)
+  const credentials = btoa('gbY4W8HgfoKLPPj_itX7oqY8XlIa:jB34ClQIza3ZkxfSbUkic8hVDgsa');
+  console.log('Auth header:', `Basic ${credentials}`);
+  const response = await fetch('/token', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       'Accept': 'application/json',
+      'Authorization': `Basic ${credentials}`,
     },
     body: new URLSearchParams({
       'grant_type': 'client_credentials',
