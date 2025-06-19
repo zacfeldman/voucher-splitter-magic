@@ -1,17 +1,20 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Copy, Download } from 'lucide-react';
 import { VariableVoucherVendJsonResponse } from '@/types/voucher';
 import { toast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { Menu } from '@headlessui/react';
 
 interface SplitResultsProps {
   splitVouchers: VariableVoucherVendJsonResponse[];
   onStartOver: () => void;
+  onBack: () => void;
 }
 
-const SplitResults: React.FC<SplitResultsProps> = ({ splitVouchers, onStartOver }) => {
+const SplitResults: React.FC<SplitResultsProps> = ({ splitVouchers, onStartOver, onBack }) => {
   const formatCurrency = (cents: number) => {
     return `R${(cents / 100).toFixed(2)}`;
   };
@@ -62,6 +65,49 @@ const SplitResults: React.FC<SplitResultsProps> = ({ splitVouchers, onStartOver 
     });
   };
 
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    splitVouchers.forEach((voucher, idx) => {
+      let y = 20 + idx * 60;
+      doc.setFontSize(14);
+      doc.setTextColor(33, 150, 243);
+      doc.text(`Voucher ${idx + 1}`, 14, y);
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Amount: R${(voucher.amount / 100).toFixed(2)}`, 14, y + 10);
+      doc.text(`Token: ${voucher.token}`, 14, y + 18);
+      doc.text(`Serial: ${voucher.serialNumber}`, 14, y + 26);
+      doc.text(`Expires: ${voucher.expiryDateTime ? new Date(voucher.expiryDateTime).toLocaleDateString() : ''}`, 14, y + 34);
+      if (voucher.productInstructions) {
+        doc.setFontSize(10);
+        doc.text(`Instructions: ${voucher.productInstructions}`, 14, y + 42);
+      }
+      // Draw a line under each block
+      doc.setDrawColor(200, 200, 200);
+      doc.line(10, y + 48, 200, y + 48);
+    });
+    doc.save(`split-vouchers-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
+  const handleShare = async () => {
+    const shareText = splitVouchers.map((voucher, idx) =>
+      `Voucher ${idx + 1}\nToken: ${voucher.token}\nAmount: ${formatCurrency(voucher.amount)}\nSerial: ${voucher.serialNumber}\nExpires: ${voucher.expiryDateTime ? new Date(voucher.expiryDateTime).toLocaleDateString() : ''}\n---`
+    ).join('\n\n');
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Split Vouchers',
+          text: shareText
+        });
+      } catch (err) {
+        toast({ title: 'Share cancelled', description: '', variant: 'destructive' });
+      }
+    } else {
+      navigator.clipboard.writeText(shareText);
+      toast({ title: 'Copied', description: 'Voucher details copied to clipboard' });
+    }
+  };
+
   const totalValue = splitVouchers.reduce((sum, voucher) => sum + voucher.amount, 0);
 
   return (
@@ -69,30 +115,64 @@ const SplitResults: React.FC<SplitResultsProps> = ({ splitVouchers, onStartOver 
       {/* Success Header */}
       <Card className="glass-effect shadow-xl text-center">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-green-600">
-            ✅ Voucher Split Successfully!
-          </CardTitle>
-          <p className="text-muted-foreground">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+            <CardTitle className="text-2xl font-bold text-green-600">
+              ✅ Voucher Split Successfully!
+            </CardTitle>
+            <div className="flex gap-2 justify-center md:justify-end">
+              <Button variant="outline" onClick={onBack}>
+                Back
+              </Button>
+              <Menu as="div" className="relative inline-block text-left">
+                <Menu.Button as={Button} variant="outline" className="flex items-center space-x-2">
+                  <span role="img" aria-label="Download">⬇️</span>
+                  <span>Download</span>
+                </Menu.Button>
+                <Menu.Items className="absolute right-0 mt-2 w-36 origin-top-right bg-white border border-gray-200 rounded-md shadow-lg focus:outline-none z-10">
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        className={`w-full text-left px-4 py-2 text-sm ${active ? 'bg-blue-100' : ''}`}
+                        onClick={downloadPDF}
+                      >
+                        PDF
+                      </button>
+                    )}
+                  </Menu.Item>
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button
+                        className={`w-full text-left px-4 py-2 text-sm ${active ? 'bg-blue-100' : ''}`}
+                        onClick={downloadResults}
+                      >
+                        CSV
+                      </button>
+                    )}
+                  </Menu.Item>
+                </Menu.Items>
+              </Menu>
+              <Button
+                onClick={handleShare}
+                variant="outline"
+                className="flex items-center space-x-2"
+              >
+                <span role="img" aria-label="Share">🔗</span>
+                <span>Share</span>
+              </Button>
+              <Button
+                onClick={onStartOver}
+                className="blue-gradient hover:opacity-90 transition-opacity text-white"
+              >
+                Split Another Voucher
+              </Button>
+            </div>
+          </div>
+          <p className="text-muted-foreground mt-2">
             Your voucher has been split into {splitVouchers.length} new vouchers totaling {formatCurrency(totalValue)}
           </p>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-center space-x-4">
-            <Button
-              onClick={downloadResults}
-              variant="outline"
-              className="flex items-center space-x-2"
-            >
-              <Download className="h-4 w-4" />
-              <span>Download CSV</span>
-            </Button>
-            <Button
-              onClick={onStartOver}
-              className="blue-gradient hover:opacity-90 transition-opacity text-white"
-            >
-              Split Another Voucher
-            </Button>
-          </div>
+          {/* ...existing code... */}
         </CardContent>
       </Card>
 

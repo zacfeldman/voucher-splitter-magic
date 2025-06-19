@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import VoucherValidator from './VoucherValidator';
 import VoucherSplitter from './VoucherSplitter';
 import SplitResults from './SplitResults';
+import VoucherBalanceChecker from './VoucherBalanceChecker';
+import LandingPage from './LandingPage';
+import TopNavBar from './TopNavBar';
 import { ValidateVoucherResponse, VariableVoucherVendJsonResponse } from '@/types/voucher';
 import { fetchAuthToken } from '@/services/voucherApi';
 import { toast } from '@/hooks/use-toast';
 
-type AppStep = 'validate' | 'split' | 'results';
+type AppStep = 'landing' | 'validate' | 'split' | 'results' | 'balance';
 
 // Vite provides import.meta.env for environment variables
 const isTestMode = import.meta.env.VITE_TEST_MODE === 'true';
@@ -40,7 +43,7 @@ const VoucherSplitApp: React.FC = () => {
   }, [isTestMode]);
 
   // Use test mode if enabled, otherwise start in normal mode
-  const [currentStep, setCurrentStep] = useState<AppStep>(isTestMode ? 'split' : 'validate');
+  const [currentStep, setCurrentStep] = useState<AppStep>('landing');
   const [validatedVoucher, setValidatedVoucher] = useState<ValidateVoucherResponse | null>(
     isTestMode
       ? {
@@ -84,57 +87,69 @@ const VoucherSplitApp: React.FC = () => {
     }
   };
 
+  // Navigation logic for menu and back buttons
+  const handleNavigate = (step: AppStep) => {
+    setCurrentStep(step);
+  };
+
+  // Back button logic for each screen
   const handleBack = () => {
+    if (currentStep === 'split') {
+      setCurrentStep('validate');
+    } else if (currentStep === 'results') {
+      setCurrentStep('split');
+    } else if (currentStep === 'validate') {
+      setCurrentStep('landing');
+    } else {
+      setCurrentStep('landing');
+    }
+  };
+
+  const handleGoToBalance = () => {
+    setCurrentStep('balance');
+  };
+
+  const handleStartSplit = () => {
     setCurrentStep(isTestMode ? 'split' : 'validate');
   };
 
   return (
     <div className="min-h-screen py-8 px-4">
+      <TopNavBar currentStep={currentStep} onNavigate={handleNavigate} />
       <div className="container mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent mb-2">
-            Blue Label Voucher Splitter
-          </h1>
-          <p className="text-xl text-muted-foreground">
-            Split your vouchers into smaller denominations with ease
-          </p>
-          {isTestMode && (
-            <p className="text-sm text-orange-600 mt-2">
-              Testing Mode: Using mock R100 voucher
-            </p>
-          )}
-        </div>
-
-        {/* Progress Indicator - Modified for testing */}
-        <div className="flex justify-center mb-8">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium bg-green-600 text-white">
-              1
-            </div>
-            <div className={`h-1 w-16 ${currentStep === 'split' || currentStep === 'results' ? 'bg-green-600' : 'bg-gray-300'}`} />
-            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-              currentStep === 'split' ? 'bg-blue-600 text-white' : 
-              currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-300'
-            }`}>
-              2
-            </div>
-            <div className={`h-1 w-16 ${currentStep === 'results' ? 'bg-green-600' : 'bg-gray-300'}`} />
-            <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-              currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-300'
-            }`}>
-              3
+        {/* Progress Indicator - Only show when not on landing or balance */}
+        {currentStep !== 'landing' && currentStep !== 'balance' && (
+          <div className="flex justify-center mb-8">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium bg-green-600 text-white">
+                1
+              </div>
+              <div className={`h-1 w-16 ${currentStep === 'split' || currentStep === 'results' ? 'bg-green-600' : 'bg-gray-300'}`} />
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+                currentStep === 'split' ? 'bg-blue-600 text-white' : 
+                currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-300'
+              }`}>
+                2
+              </div>
+              <div className={`h-1 w-16 ${currentStep === 'results' ? 'bg-green-600' : 'bg-gray-300'}`} />
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+                currentStep === 'results' ? 'bg-green-600 text-white' : 'bg-gray-300'
+              }`}>
+                3
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Step Content */}
         {loadingAuth && !isTestMode ? (
           <div className="text-center text-lg text-blue-600 mt-10">
             Loading authentication...
           </div>
+        ) : currentStep === 'landing' ? (
+          <LandingPage onSplitVoucher={handleStartSplit} onCheckBalance={handleGoToBalance} />
         ) : currentStep === 'validate' && (
-          <VoucherValidator onVoucherValidated={handleVoucherValidated} authToken={authToken} />
+          <VoucherValidator onVoucherValidated={handleVoucherValidated} authToken={authToken} onBack={handleBack} />
         )}
 
         {currentStep === 'split' && validatedVoucher && (
@@ -151,7 +166,12 @@ const VoucherSplitApp: React.FC = () => {
           <SplitResults
             splitVouchers={splitVouchers}
             onStartOver={handleStartOver}
+            onBack={handleBack}
           />
+        )}
+
+        {currentStep === 'balance' && (
+          <VoucherBalanceChecker onBack={handleBack} />
         )}
       </div>
     </div>

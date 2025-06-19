@@ -67,27 +67,58 @@ export const validateVoucher = async (request: ValidateVoucherRequest, authToken
   return data;
 };
 
-export const splitVoucher = async (request: SplitVoucherRequest, authToken: string): Promise<SplitVoucherResponse> => {
-  console.log('Splitting voucher:', request);
-  
-  const headers = {
-    ...getAuthHeaders(authToken),
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
+export const splitVoucher = async (request: SplitVoucherRequest, authToken: string): Promise<any> => {
+  // Mock response for UI development while backend is down
+  return {
+    originalVoucher: {
+      serialNumber: 'BL01CCBE9EAAE6A5',
+      amount: 50000,
+      status: 'SPLIT',
+      voucherType: 'BluVoucher',
+      saleDateTime: '2021-06-22T14:07:41+02:00',
+      entityName: 'Engin Garage',
+    },
+    splitVouchers: [
+      {
+        token: '3715617184665132',
+        amount: 25000,
+        status: 'ACTIVE',
+        expiryDateTime: '2022-01-09T14:07:41+02:00',
+        serialNumber: 'BL01CCBE9EAAE6A6',
+        voucherType: 'BluVoucher',
+        saleDateTime: '2021-06-22T14:07:41+02:00',
+        entityName: 'Engin Garage',
+      },
+      {
+        token: '3715617184665133',
+        amount: 25000,
+        status: 'ACTIVE',
+        expiryDateTime: '2022-01-09T14:07:41+02:00',
+        serialNumber: 'BL01CCBE9EAAE6A7',
+        voucherType: 'BluVoucher',
+        saleDateTime: '2021-06-22T14:07:41+02:00',
+        entityName: 'Engin Garage',
+      }
+    ]
   };
-  
-  const response = await fetch('https://api.qa.bluelabeltelecoms.co.za/vouchersplitservice/v1/splitvoucher', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(request),
-  });
+};
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Network error' }));
-    throw new Error(errorData.error || `HTTP ${response.status}`);
-  }
-
-  const data = await response.json();
-  console.log('Voucher split response:', data);
-  return data;
+export const checkVoucherBalance = async (pin: string): Promise<any> => {
+  // Mock response for UI development while backend is down
+  return {
+    status: 'PENDING',
+    amount: 50000,
+    expiryDateTime: '2022-01-09T14:07:41+02:00',
+    redemptionDateTime: '2019-01-09T14:07:41+02:00',
+    redemptionRequestId: '0123456789',
+    redemptionPartner: 'Betway Blu Voucher Redemption',
+    voucherTypeId: 13,
+    msisdn: '0728703170',
+    serialNumber: 'BL01CCBE9EAAE6A5',
+    voucherType: 'BluVoucher',
+    saleDateTime: '2021-06-22T14:07:41+02:00',
+    paymentType: 'Cash',
+    entityName: 'Engin Garage',
+    token: pin
+  };
 };

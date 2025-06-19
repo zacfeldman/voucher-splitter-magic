@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => ({
       '/api': {
         target: 'https://api.qa.bltelecoms.net',
         changeOrigin: true,
+        secure: false,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
       '/api-split': {
@@ -29,20 +30,11 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api-split/, ''),
-        configure: (proxy, _options) => {
-          proxy.on('error', (err, _req, _res) => {
-            console.log('proxy error', err);
-          });
-          proxy.on('proxyReq', (proxyReq, req, _res) => {
-            proxyReq.setHeader('Content-Type', 'application/json');
-            proxyReq.setHeader('Accept', 'application/json');
-            proxyReq.setHeader('Cookie', 'BIGipServer~GP_QA_Production~idp.qa.bluelabeltelecoms.co.za_tcp9453_pool=3091993516.60708.0000');
-            console.log('Sending Request to the Target:', req.method, req.url);
-          });
-          proxy.on('proxyRes', (proxyRes, req, _res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
-          });
-        },
+      },
+      '/v2': {
+        target: 'https://api.qa.bltelecoms.net',
+        changeOrigin: true,
+        secure: false,
       },
       '/token': {
         target: 'https://api.qa.bluelabeltelecoms.co.za',

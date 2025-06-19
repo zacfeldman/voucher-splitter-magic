@@ -11,9 +11,10 @@ import { toast } from '@/hooks/use-toast';
 interface VoucherValidatorProps {
   onVoucherValidated: (voucher: ValidateVoucherResponse, pin: string) => void;
   authToken: string | null;
+  onBack: () => void;
 }
 
-const VoucherValidator: React.FC<VoucherValidatorProps> = ({ onVoucherValidated, authToken }) => {
+const VoucherValidator: React.FC<VoucherValidatorProps> = ({ onVoucherValidated, authToken, onBack }) => {
   const [pin, setPin] = useState('');
   const [isValidating, setIsValidating] = useState(false);
 
@@ -88,21 +89,29 @@ const VoucherValidator: React.FC<VoucherValidatorProps> = ({ onVoucherValidated,
             className="text-center text-lg tracking-wider"
           />
         </div>
-        
-        <Button
-          onClick={handleValidate}
-          disabled={isValidating}
-          className="w-full blue-gradient hover:opacity-90 transition-opacity text-white font-semibold py-3"
-        >
-          {isValidating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Validating...
-            </>
-          ) : (
-            'Validate Voucher'
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={onBack}
+            className="flex-1"
+          >
+            Back
+          </Button>
+          <Button
+            onClick={handleValidate}
+            disabled={isValidating}
+            className="flex-1 blue-gradient hover:opacity-90 transition-opacity text-white font-semibold py-3"
+          >
+            {isValidating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Validating...
+              </>
+            ) : (
+              'Validate Voucher'
+            )}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

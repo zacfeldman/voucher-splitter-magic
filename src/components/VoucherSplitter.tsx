@@ -91,7 +91,7 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
         splitVouchers: desiredVouchers,
       }, authToken);
 
-      onSplitComplete(response.SplitVouchers);
+      onSplitComplete(response.splitVouchers);
       toast({
         title: "Success",
         description: response.message || "Voucher split successfully",
@@ -139,7 +139,7 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
         <CardContent className="space-y-4">
           {splits.map((split, index) => (
             <div key={index} className="flex items-center space-x-2">
-              <Label className="w-16 text-sm">Amount {index + 1}:</Label>
+              <Label className="w-20 text-sm">Voucher {index + 1}:</Label>
               <div className="flex-1 relative">
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">R</span>
                 <Input
