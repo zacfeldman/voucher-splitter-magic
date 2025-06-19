@@ -24,7 +24,7 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
   authToken
 }) => {
   // Store splits as strings for raw user input
-  const [splits, setSplits] = useState<string[]>([]);
+  const [splits, setSplits] = useState<string[]>(['']);
   const [isSplitting, setIsSplitting] = useState(false);
 
   const formatCurrency = (cents: number) => {
@@ -32,7 +32,15 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
   };
 
   const addSplit = () => {
-    setSplits([...splits, '']);
+    // Smart default: if all splits are empty or zero, auto-fill all with even split
+    const allEmpty = splits.every(s => !s || parseFloat(s) === 0);
+    const newSplitsCount = splits.length + 1;
+    if (allEmpty && newSplitsCount > 1) {
+      const evenValue = (validatedVoucher.ValueCents / 100 / newSplitsCount).toFixed(2);
+      setSplits(Array(newSplitsCount).fill(evenValue));
+    } else {
+      setSplits([...splits, '']);
+    }
   };
 
   const removeSplit = (index: number) => {
@@ -40,7 +48,17 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
   };
 
   const updateSplit = (index: number, value: string) => {
-    setSplits(splits.map((v, i) => (i === index ? value : v)));
+    const newSplits = splits.map((v, i) => (i === index ? value : v));
+    // Smart default: if editing any split except the last, auto-fill the last with the remaining value
+    if (index !== splits.length - 1) {
+      // Calculate total of all except last
+      const totalExceptLast = newSplits.slice(0, -1).reduce((sum, s) => sum + (parseFloat(s.replace(',', '.')) || 0), 0);
+      const remaining = (validatedVoucher.ValueCents / 100) - totalExceptLast;
+      if (remaining >= 0) {
+        newSplits[newSplits.length - 1] = remaining.toFixed(2);
+      }
+    }
+    setSplits(newSplits);
   };
 
   // Add this helper to format a string as a decimal with two places
@@ -59,13 +77,16 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
 
   const totalSplitValue = splitsInCents.reduce((sum, split) => sum + split, 0);
   const remainingValue = validatedVoucher.ValueCents - totalSplitValue;
-  const isValidSplit =
-    totalSplitValue === validatedVoucher.ValueCents &&
-    splitsInCents.length > 0 &&
-    splitsInCents.every(split => split > 0);
+  // Allow split if at least one split is > 0
+  const isValidSplit = splitsInCents.some(split => split > 0);
+
+  // Validation feedback
+  const showWarning = totalSplitValue !== validatedVoucher.ValueCents && splitsInCents.length > 0;
 
   const handleSplit = async () => {
-    if (!isValidSplit) {
+    // Remove empty or zero splits before submitting
+    const filteredSplits = splitsInCents.filter(amount => amount > 0);
+    if (filteredSplits.length === 0 || filteredSplits.reduce((a, b) => a + b, 0) !== validatedVoucher.ValueCents) {
       toast({
         title: "Invalid Split",
         description: "Split amounts must sum to the original voucher value",
@@ -85,7 +106,7 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
 
     setIsSplitting(true);
     try {
-      const desiredVouchers = splitsInCents.map(amount => ({ ValueCents: amount }));
+      const desiredVouchers = filteredSplits.map(amount => ({ ValueCents: amount }));
       const response = await splitVoucher({
         pin: voucherPin,
         splitVouchers: desiredVouchers,
@@ -137,6 +158,54 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="font-medium">Total Split:</span>
+            <span className={totalSplitValue === validatedVoucher.ValueCents ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
+              {formatCurrency(totalSplitValue)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center mb-2">
+            <span className="font-medium">Remaining:</span>
+            <span className={remainingValue === 0 ? 'text-green-600 font-bold' : 'text-orange-600 font-bold'}>
+              {formatCurrency(remainingValue)}
+            </span>
+          </div>
+          {showWarning && (
+            <div className="text-sm text-red-600 font-semibold mb-2">Total split must match the original voucher value.</div>
+          )}
+          <div className="flex gap-2 mb-4">
+            {[2, 3, 4].map(n => (
+              <Button
+                key={n}
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const evenValue = (validatedVoucher.ValueCents / 100 / n).toFixed(2);
+                  setSplits(Array(n).fill(evenValue));
+                }}
+                className="flex-1"
+              >
+                Split in {n}
+              </Button>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => {
+                const input = prompt('How many splits? (2-100)');
+                const n = Number(input);
+                if (n && n >= 2 && n <= 100) {
+                  const evenValue = (validatedVoucher.ValueCents / 100 / n).toFixed(2);
+                  setSplits(Array(n).fill(evenValue));
+                } else if (input !== null) {
+                  alert('Please enter a number between 2 and 100.');
+                }
+              }}
+            >
+              Custom
+            </Button>
+          </div>
           {splits.map((split, index) => (
             <div key={index} className="flex items-center space-x-2">
               <Label className="w-20 text-sm">Voucher {index + 1}:</Label>
@@ -200,18 +269,6 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
             >
               Add Remaining Amount
             </Button>
-          </div>
-
-          {/* Summary */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg space-y-2">
-            <div className="flex justify-between">
-              <span>Total Split:</span>
-              <span className="font-semibold">{formatCurrency(totalSplitValue)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Remaining:</span>
-              <span className={`font-semibold ${remainingValue === 0 ? 'text-green-600' : remainingValue < 0 ? 'text-red-600' : 'text-orange-600'}`}>{formatCurrency(Math.abs(remainingValue))}{remainingValue < 0 && ' (Over)'}</span>
-            </div>
           </div>
 
           <div className="flex space-x-3 pt-4">

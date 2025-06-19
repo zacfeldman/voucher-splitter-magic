@@ -68,23 +68,45 @@ const SplitResults: React.FC<SplitResultsProps> = ({ splitVouchers, onStartOver,
   const downloadPDF = () => {
     const doc = new jsPDF();
     splitVouchers.forEach((voucher, idx) => {
-      let y = 20 + idx * 60;
-      doc.setFontSize(14);
-      doc.setTextColor(33, 150, 243);
+      let y = 20 + idx * 65;
+      // Voucher number
+      doc.setFontSize(16);
+      doc.setTextColor(33, 102, 244); // blue
       doc.text(`Voucher ${idx + 1}`, 14, y);
+      // Amount
+      doc.setFontSize(20);
+      doc.setTextColor(34, 197, 94); // green
+      doc.text(`R${(voucher.amount / 100).toFixed(2)}`, 14, y + 12);
+      // Token
       doc.setFontSize(12);
       doc.setTextColor(0, 0, 0);
-      doc.text(`Amount: R${(voucher.amount / 100).toFixed(2)}`, 14, y + 10);
-      doc.text(`Token: ${voucher.token}`, 14, y + 18);
-      doc.text(`Serial: ${voucher.serialNumber}`, 14, y + 26);
-      doc.text(`Expires: ${voucher.expiryDateTime ? new Date(voucher.expiryDateTime).toLocaleDateString() : ''}`, 14, y + 34);
+      doc.text('Token:', 14, y + 22);
+      doc.setFont('courier', 'normal');
+      doc.text(voucher.token, 32, y + 22);
+      doc.setFont('helvetica', 'normal');
+      // Serial
+      doc.setFontSize(11);
+      doc.text(`Serial:`, 14, y + 30);
+      doc.setFont('courier', 'normal');
+      doc.text(voucher.serialNumber, 32, y + 30);
+      doc.setFont('helvetica', 'normal');
+      // Expires
+      doc.setFontSize(11);
+      doc.text(`Expires:`, 14, y + 38);
+      doc.text(voucher.expiryDateTime ? new Date(voucher.expiryDateTime).toLocaleDateString() : '-', 32, y + 38);
+      // Instructions
       if (voucher.productInstructions) {
         doc.setFontSize(10);
-        doc.text(`Instructions: ${voucher.productInstructions}`, 14, y + 42);
+        doc.setTextColor(33, 102, 244);
+        doc.text('Instructions:', 14, y + 46);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('courier', 'normal');
+        doc.text(voucher.productInstructions, 40, y + 46, { maxWidth: 150 });
+        doc.setFont('helvetica', 'normal');
       }
-      // Draw a line under each block
+      // Draw a rounded rectangle around the block
       doc.setDrawColor(200, 200, 200);
-      doc.line(10, y + 48, 200, y + 48);
+      doc.roundedRect(10, y - 10, 190, 55, 4, 4);
     });
     doc.save(`split-vouchers-${new Date().toISOString().split('T')[0]}.pdf`);
   };
