@@ -1,9 +1,8 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Blue Label themed design system */
+/* Blu Voucher themed design system */
 
 @layer base {
   :root {
@@ -16,40 +15,43 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 213 94% 68%;
+    --primary: 212 100% 36%; /* #0057B8 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 197 100% 47%; /* #009FE3 */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
+    --muted: 210 40% 96.1%; /* fallback */
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 213 94% 68%;
+    --accent: 42 100% 50%; /* #FFB600 */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 213 94% 68%;
+    --border: 213 100% 90%; /* light blue border */
+    --input: 213 100% 90%;
+    --ring: 212 100% 36%;
 
     --radius: 0.75rem;
 
-    --blue-gradient: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    --blue-light: 213 94% 68%;
-    --blue-dark: 213 94% 40%;
+    --blue-gradient: linear-gradient(135deg, #009FE3 0%, #0057B8 100%);
+    --blue-light: 197 100% 47%; /* #009FE3 */
+    --blue-dark: 212 100% 24%; /* #003B70 */
+    --gray-light: 210 28% 97%; /* #F4F7FA */
   }
 }
 
 @layer base {
+  html {
+    font-family: 'PT Sans', 'Segoe UI', 'Arial', sans-serif;
+  }
   * {
     @apply border-border;
   }
-
   body {
-    @apply bg-gradient-to-br from-blue-50 to-indigo-100 text-foreground min-h-screen;
+    @apply bg-[hsl(var(--gray-light))] text-foreground min-h-screen;
   }
 }
 
@@ -57,7 +59,6 @@
   .blue-gradient {
     background: var(--blue-gradient);
   }
-  
   .glass-effect {
     @apply backdrop-blur-lg bg-white/80 border border-white/20;
   }

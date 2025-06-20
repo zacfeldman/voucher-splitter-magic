@@ -199,57 +199,116 @@ const SplitResults: React.FC<SplitResultsProps> = ({ splitVouchers, onStartOver,
       </Card>
 
       {/* Split Vouchers */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {splitVouchers.map((voucher, index) => (
-          <Card key={voucher.serialNumber} className="glass-effect shadow-lg hover:shadow-xl transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-bold text-center text-blue-600">
-                Voucher {index + 1}
-              </CardTitle>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {formatCurrency(voucher.amount)}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Token:</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard(voucher.token, 'Token')}
-                    className="h-6 p-1 text-xs"
-                  >
-                    <Copy className="h-3 w-3 mr-1" />
-                    Copy
+      {(() => {
+        // Helper to chunk array into groups of 4
+        const chunkArray = (arr, size) => arr.length === 0 ? [] : [arr.slice(0, size), ...chunkArray(arr.slice(size), size)];
+        const voucherChunks = chunkArray(splitVouchers, 4);
+        return voucherChunks.map((chunk, groupIdx) => (
+          <div key={groupIdx} className="flex flex-wrap justify-center gap-6 px-4 py-4 mb-16">
+            {chunk.map((voucher, index) => {
+              // Format dates as '18 Feb 2028'
+              const formatDate = (dateStr: string | Date | undefined) => {
+                if (!dateStr) return '-';
+                const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr;
+                return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+              };
+              const purchaseDate = formatDate(new Date());
+              const expiryDate = formatDate(voucher.expiryDateTime);
+
+              // PDF download for this voucher only
+              const downloadVoucherPDF = () => {
+                const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+                let y = 40;
+                doc.setFillColor(255, 255, 255);
+                doc.roundedRect(40, y, 350, 420, 16, 16, 'F');
+                doc.addImage('/blu-voucher-logo.png', 'PNG', 160, y + 16, 110, 30);
+                y += 60;
+                doc.setFontSize(12);
+                doc.setTextColor(80, 80, 80);
+                doc.text('Voucher Amount', 60, y);
+                doc.text('Expiry Date', 260, y);
+                doc.setFontSize(16);
+                doc.setTextColor(30, 30, 30);
+                doc.text(formatCurrency(voucher.amount), 60, y + 20);
+                doc.text(expiryDate, 260, y + 20);
+                y += 40;
+                doc.setDrawColor(220, 220, 220);
+                doc.line(60, y, 370, y);
+                y += 30;
+                doc.setFontSize(12);
+                doc.setTextColor(120, 120, 120);
+                doc.text('Voucher PIN', 60, y);
+                doc.setFontSize(20);
+                doc.setTextColor(30, 30, 30);
+                doc.text(voucher.token, 60, y + 30);
+                y += 60;
+                doc.setFontSize(12);
+                doc.setTextColor(80, 80, 80);
+                doc.text('Purchase Date:', 60, y);
+                doc.text(purchaseDate, 180, y);
+                y += 20;
+                doc.text('Voucher Serial Number:', 60, y);
+                doc.text(voucher.serialNumber, 180, y);
+                y += 20;
+                doc.text('Transaction Reference Number:', 60, y);
+                doc.text(voucher.reference, 240, y);
+                y += 30;
+                doc.setDrawColor(220, 220, 220);
+                doc.line(60, y, 370, y);
+                y += 20;
+                doc.setFontSize(10);
+                doc.setTextColor(80, 80, 80);
+                doc.text('For redemption partners, please visit bluvoucher.co.za', 60, y);
+                y += 16;
+                doc.text('Customer Care: Please contact your service provider or WhatsApp us on 079 376 8590.', 60, y);
+                doc.save(`voucher-${voucher.serialNumber}.pdf`);
+              };
+
+              // Format PIN with space every 4 digits
+              const formatPin = (pin) => pin.replace(/(.{4})/g, '$1 ').trim();
+
+              return (
+                <div key={voucher.serialNumber} className="w-full max-w-xs md:max-w-sm mx-auto bg-gradient-to-b from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 p-10 flex flex-col items-center relative mb-8">
+                  <img src="/blu-voucher-logo.png" alt="Blu Voucher Logo" className="h-8 mb-4 mt-2" />
+                  <div className="w-full flex justify-between text-sm font-semibold text-gray-700 mb-4">
+                    <div className="flex flex-col items-start">
+                      <span>Voucher Amount</span>
+                      <span className="text-lg font-bold text-gray-900">{formatCurrency(voucher.amount)}</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span>Expiry Date</span>
+                      <span className="text-lg font-bold text-gray-900">{expiryDate}</span>
+                    </div>
+                  </div>
+                  <hr className="w-full my-4 border-gray-200" />
+                  <div className="w-full text-center text-xs font-semibold text-gray-600 mb-2">Voucher PIN</div>
+                  <div className="w-full flex items-center justify-center mb-4">
+                    <span className="text-2xl font-bold tracking-widest text-gray-900 select-all text-center bg-gray-100 rounded px-3 py-2 whitespace-normal break-all" style={{letterSpacing: '0.08em'}}>{formatPin(voucher.token)}</span>
+                    <button className="ml-2 p-1 rounded hover:bg-gray-100" onClick={() => copyToClipboard(voucher.token, 'Voucher PIN')} title="Copy PIN">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16h8M8 12h8m-7 8h6a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v9a2 2 0 002 2z" /></svg>
+                    </button>
+                  </div>
+                  <div className="w-full flex flex-col gap-3 text-sm text-gray-700 mt-2 mb-2">
+                    <div className="flex justify-between"><span>Purchase Date:</span><span className="font-bold">{purchaseDate}</span></div>
+                    <div className="flex justify-between"><span>Voucher Serial Number:</span><span className="font-mono text-xs font-bold break-words max-w-[180px]">{voucher.serialNumber}</span></div>
+                    <div className="flex justify-between"><span>Transaction Reference Number:</span><span className="font-mono text-xs font-bold break-words max-w-[180px]">{voucher.reference}</span></div>
+                  </div>
+                  <hr className="w-full my-4 border-gray-200" />
+                  <div className="w-full text-xs text-center text-gray-700 mb-1">
+                    For redemption partners, please visit <a href="https://bluvoucher.co.za" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">bluvoucher.co.za</a>
+                  </div>
+                  <div className="w-full text-xs text-center text-gray-700 mb-3">
+                    Customer Care: Please contact your service provider or WhatsApp us on 079 376 8590.
+                  </div>
+                  <Button className="w-full mt-2 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-full py-2 text-base shadow-md" onClick={downloadVoucherPDF}>
+                    Download
                   </Button>
                 </div>
-                <div className="text-center bg-gray-100 p-2 rounded font-mono text-sm break-all">
-                  {voucher.token}
-                </div>
-              </div>
-
-              <div className="text-xs space-y-1">
-                <div><strong>Serial:</strong> {voucher.serialNumber}</div>
-                <div><strong>Reference:</strong> {voucher.reference}</div>
-                <div><strong>Expires:</strong> {new Date(voucher.expiryDateTime).toLocaleDateString()}</div>
-              </div>
-
-              <div className="text-xs p-2 bg-blue-50 rounded">
-                <strong>Instructions:</strong> {voucher.productInstructions}
-              </div>
-
-              {voucher.customerMessage && (
-                <div className="text-xs p-2 bg-yellow-50 rounded border-l-4 border-yellow-400">
-                  <strong>Note:</strong> {voucher.customerMessage}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              );
+            })}
+          </div>
+        ));
+      })()}
     </div>
   );
 };
