@@ -43,6 +43,12 @@ export default defineConfig(({ mode }) => ({
         ws: false,
         rewrite: (path) => path.replace(/^\/token/, '/token'),
       },
+      '/voucher-balance-proxy': {
+        target: 'https://api.qa.bltelecoms.net',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/voucher-balance-proxy/, ''),
+      },
     },
   },
   plugins: [

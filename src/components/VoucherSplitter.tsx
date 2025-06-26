@@ -26,6 +26,7 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
   // Store splits as strings for raw user input
   const [splits, setSplits] = useState<string[]>(['']);
   const [isSplitting, setIsSplitting] = useState(false);
+  const MIN_SPLIT_CENTS = 200;
 
   const formatCurrency = (cents: number) => {
     return `R${(cents / 100).toFixed(2)}`;
@@ -75,6 +76,9 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
     return isNaN(num) ? 0 : Math.round(num * 100);
   });
 
+  // Check for any splits below minimum
+  const hasTooSmallSplit = splitsInCents.some(split => split > 0 && split < MIN_SPLIT_CENTS);
+
   const totalSplitValue = splitsInCents.reduce((sum, split) => sum + split, 0);
   const remainingValue = validatedVoucher.ValueCents - totalSplitValue;
   // Allow split if at least one split is > 0
@@ -94,7 +98,14 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
       });
       return;
     }
-
+    if (hasTooSmallSplit) {
+      toast({
+        title: "Split Too Small",
+        description: `Each split must be at least R2.00 (200 cents). Please adjust your split amounts.`,
+        variant: "destructive",
+      });
+      return;
+    }
     if (authToken === null) {
       toast({
         title: "Authentication Error",
@@ -103,15 +114,14 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
       });
       return;
     }
-
     setIsSplitting(true);
     try {
+      console.log('Final splits being sent to API (in cents):', filteredSplits); // Enhanced logging
       const desiredVouchers = filteredSplits.map(amount => ({ ValueCents: amount }));
       const response = await splitVoucher({
         pin: voucherPin,
         splitVouchers: desiredVouchers,
       }, authToken);
-
       onSplitComplete(response.splitVouchers);
       toast({
         title: "Success",
@@ -173,21 +183,38 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
           {showWarning && (
             <div className="text-sm text-red-600 font-semibold mb-2">Total split must match the original voucher value.</div>
           )}
+          {hasTooSmallSplit && (
+            <div className="text-sm text-red-600 font-semibold mb-2">
+              Each split must be at least R2.00 (200 cents).
+            </div>
+          )}
           <div className="flex gap-2 mb-4">
-            {[2, 3, 4].map(n => (
-              <Button
-                key={n}
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const evenValue = (validatedVoucher.ValueCents / 100 / n).toFixed(2);
-                  setSplits(Array(n).fill(evenValue));
-                }}
-                className="flex-1"
-              >
-                Split in {n}
-              </Button>
-            ))}
+            {[2, 3, 4].map(n => {
+              // Only show quick split if all splits will be >= R2.00
+              const evenCents = Math.floor(validatedVoucher.ValueCents / n);
+              if (evenCents < MIN_SPLIT_CENTS) return null;
+
+              return (
+                <Button
+                  key={n}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const totalCents = validatedVoucher.ValueCents;
+                    const baseSplit = Math.floor(totalCents / n);
+                    const remainder = totalCents % n;
+                    const newSplits = Array(n).fill(baseSplit);
+                    for (let i = 0; i < remainder; i++) {
+                      newSplits[i] += 1;
+                    }
+                    setSplits(newSplits.map(s => (s / 100).toFixed(2)));
+                  }}
+                  className="flex-1"
+                >
+                  Split in {n}
+                </Button>
+              );
+            })}
             <Button
               variant="outline"
               size="sm"
@@ -196,8 +223,20 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
                 const input = prompt('How many splits? (2-100)');
                 const n = Number(input);
                 if (n && n >= 2 && n <= 100) {
-                  const evenValue = (validatedVoucher.ValueCents / 100 / n).toFixed(2);
-                  setSplits(Array(n).fill(evenValue));
+                  const evenCents = Math.floor(validatedVoucher.ValueCents / n);
+                  if (evenCents < MIN_SPLIT_CENTS) {
+                    alert('Each split must be at least R2.00. Try fewer splits.');
+                    return;
+                  }
+
+                  const totalCents = validatedVoucher.ValueCents;
+                  const baseSplit = Math.floor(totalCents / n);
+                  const remainder = totalCents % n;
+                  const newSplits = Array(n).fill(baseSplit);
+                  for (let i = 0; i < remainder; i++) {
+                    newSplits[i] += 1;
+                  }
+                  setSplits(newSplits.map(s => (s / 100).toFixed(2)));
                 } else if (input !== null) {
                   alert('Please enter a number between 2 and 100.');
                 }

@@ -127,64 +127,64 @@ const VoucherSplitApp: React.FC = () => {
         <path d="M0,500 Q360,450 720,500 T1440,500" stroke="#fff" strokeOpacity="0.08" strokeWidth="2" fill="none" />
       </svg>
       <div className="relative z-10">
-        <TopNavBar currentStep={currentStep} onNavigate={handleNavigate} />
-        <div className="container mx-auto">
+      <TopNavBar currentStep={currentStep} onNavigate={handleNavigate} />
+      <div className="container mx-auto">
           {/* Progress Indicator - Only show when not on landing, balance, or history */}
           {currentStep !== 'landing' && currentStep !== 'balance' && currentStep !== 'history' && (
-            <div className="flex justify-center mb-8">
-              <div className="flex items-center space-x-4">
+          <div className="flex justify-center mb-8">
+            <div className="flex items-center space-x-4">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium bg-pink-500 text-white">
-                  1
-                </div>
+                1
+              </div>
                 <div className={`h-1 w-16 ${currentStep === 'split' || currentStep === 'results' ? 'bg-pink-500' : 'bg-white/40'}`} />
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
-                  currentStep === 'split' ? 'bg-blue-600 text-white' : 
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+                currentStep === 'split' ? 'bg-blue-600 text-white' : 
                   currentStep === 'results' ? 'bg-pink-500 text-white' : 'bg-white/40 text-white'
-                }`}>
-                  2
-                </div>
+              }`}>
+                2
+              </div>
                 <div className={`h-1 w-16 ${currentStep === 'results' ? 'bg-pink-500' : 'bg-white/40'}`} />
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium ${
                   currentStep === 'results' ? 'bg-pink-500 text-white' : 'bg-white/40 text-white'
-                }`}>
-                  3
-                </div>
+              }`}>
+                3
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Step Content */}
-          {loadingAuth && !isTestMode ? (
+        {/* Step Content */}
+        {loadingAuth && !isTestMode ? (
             <div className="text-center text-lg text-white mt-10">
-              Loading authentication...
-            </div>
-          ) : currentStep === 'landing' ? (
-            <LandingPage onSplitVoucher={handleStartSplit} onCheckBalance={handleGoToBalance} />
-          ) : currentStep === 'validate' && (
-            <VoucherValidator onVoucherValidated={handleVoucherValidated} authToken={authToken} onBack={handleBack} />
-          )}
+            Loading authentication...
+          </div>
+        ) : currentStep === 'landing' ? (
+          <LandingPage onSplitVoucher={handleStartSplit} onCheckBalance={handleGoToBalance} />
+        ) : currentStep === 'validate' && (
+          <VoucherValidator onVoucherValidated={handleVoucherValidated} authToken={authToken} onBack={handleBack} />
+        )}
 
-          {currentStep === 'split' && validatedVoucher && (
-            <VoucherSplitter
-              validatedVoucher={validatedVoucher}
-              voucherPin={voucherPin}
-              onSplitComplete={handleSplitComplete}
-              onBack={handleBack}
-              authToken={authToken}
-            />
-          )}
+        {currentStep === 'split' && validatedVoucher && (
+          <VoucherSplitter
+            validatedVoucher={validatedVoucher}
+            voucherPin={voucherPin}
+            onSplitComplete={handleSplitComplete}
+            onBack={handleBack}
+            authToken={authToken}
+          />
+        )}
 
-          {currentStep === 'results' && (
-            <SplitResults
-              splitVouchers={splitVouchers}
-              onStartOver={handleStartOver}
-              onBack={handleBack}
-            />
-          )}
+        {currentStep === 'results' && (
+          <SplitResults
+            splitVouchers={splitVouchers}
+            onStartOver={handleStartOver}
+            onBack={handleBack}
+          />
+        )}
 
-          {currentStep === 'balance' && (
-            <VoucherBalanceChecker onBack={handleBack} />
-          )}
+        {currentStep === 'balance' && (
+          <VoucherBalanceChecker onBack={handleBack} />
+        )}
 
           {currentStep === 'history' && (
             <VoucherHistory />

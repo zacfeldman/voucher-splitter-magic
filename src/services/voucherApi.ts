@@ -68,57 +68,59 @@ export const validateVoucher = async (request: ValidateVoucherRequest, authToken
 };
 
 export const splitVoucher = async (request: SplitVoucherRequest, authToken: string): Promise<any> => {
-  // Mock response for UI development while backend is down
-  return {
-    originalVoucher: {
-      serialNumber: 'BL01CCBE9EAAE6A5',
-      amount: 50000,
-      status: 'SPLIT',
-      voucherType: 'BluVoucher',
-      saleDateTime: '2021-06-22T14:07:41+02:00',
-      entityName: 'Engin Garage',
-    },
-    splitVouchers: [
-      {
-        token: '3715617184665132',
-        amount: 25000,
-        status: 'ACTIVE',
-        expiryDateTime: '2022-01-09T14:07:41+02:00',
-        serialNumber: 'BL01CCBE9EAAE6A6',
-        voucherType: 'BluVoucher',
-        saleDateTime: '2021-06-22T14:07:41+02:00',
-        entityName: 'Engin Garage',
-      },
-      {
-        token: '3715617184665133',
-        amount: 25000,
-        status: 'ACTIVE',
-        expiryDateTime: '2022-01-09T14:07:41+02:00',
-        serialNumber: 'BL01CCBE9EAAE6A7',
-        voucherType: 'BluVoucher',
-        saleDateTime: '2021-06-22T14:07:41+02:00',
-        entityName: 'Engin Garage',
-      }
-    ]
+  // Convert splitVouchers to use ValueCents (PascalCase) for API compatibility
+  const apiRequest = {
+    pin: request.pin,
+    splitVouchers: request.splitVouchers.map(v => ({ ValueCents: v.ValueCents }))
   };
+  const headers = {
+    ...getAuthHeaders(authToken),
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  };
+  console.log('SplitVoucher API request:', apiRequest);
+  console.log('SplitVoucher API request payload:', JSON.stringify(apiRequest, null, 2));
+  const response = await fetch('https://api.qa.bluelabeltelecoms.co.za/vouchersplitservice/v1/splitvoucher', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(apiRequest),
+  });
+
+  let errorData = null;
+  if (!response.ok) {
+    try {
+      errorData = await response.json();
+    } catch (e) {
+      errorData = { error: 'Network error' };
+    }
+    console.error('Split failed:', errorData);
+    throw new Error(errorData.error || `HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  console.log('Voucher split response:', data);
+  return data;
 };
 
 export const checkVoucherBalance = async (pin: string): Promise<any> => {
-  // Mock response for UI development while backend is down
-  return {
-    status: 'PENDING',
-    amount: 50000,
-    expiryDateTime: '2022-01-09T14:07:41+02:00',
-    redemptionDateTime: '2019-01-09T14:07:41+02:00',
-    redemptionRequestId: '0123456789',
-    redemptionPartner: 'Betway Blu Voucher Redemption',
-    voucherTypeId: 13,
-    msisdn: '0728703170',
-    serialNumber: 'BL01CCBE9EAAE6A5',
-    voucherType: 'BluVoucher',
-    saleDateTime: '2021-06-22T14:07:41+02:00',
-    paymentType: 'Cash',
-    entityName: 'Engin Garage',
-    token: pin
-  };
+  const url = `/voucher-balance-proxy/v2/trade/voucher/variable/vouchers/full?token=${encodeURIComponent(pin)}`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'accept': 'application/json',
+      'apikey': '3d177d99-2edd-4249-944b-fec5c820421a',
+    },
+  });
+
+  if (!response.ok) {
+    let errorMsg = `Failed to fetch voucher balance: HTTP ${response.status}`;
+    try {
+      const errorData = await response.json();
+      errorMsg = errorData.error || errorMsg;
+    } catch {}
+    throw new Error(errorMsg);
+  }
+
+  const data = await response.json();
+  return data;
 };
