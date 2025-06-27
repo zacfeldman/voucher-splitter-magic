@@ -24,6 +24,7 @@ const VoucherBalanceChecker: React.FC<VoucherBalanceCheckerProps> = ({ onBack })
   const [loading, setLoading] = useState(false);
   const [voucherInfo, setVoucherInfo] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+  const [lastCheckedPin, setLastCheckedPin] = useState<string>("");
 
   const handleCheckBalance = async () => {
     if (!pin) {
@@ -39,6 +40,7 @@ const VoucherBalanceChecker: React.FC<VoucherBalanceCheckerProps> = ({ onBack })
     try {
       const response = await checkVoucherBalance(pin);
       setVoucherInfo(response);
+      setLastCheckedPin(pin);
       toast({
         title: "Success",
         description: "Voucher balance retrieved successfully",
@@ -91,31 +93,32 @@ const VoucherBalanceChecker: React.FC<VoucherBalanceCheckerProps> = ({ onBack })
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Token:</span>
+              <div className="flex flex-col items-center mb-2">
+                <span className="text-sm font-medium">Voucher PIN:</span>
+                <div className="flex items-center justify-center">
+                  <div className="text-center bg-gray-100 p-2 rounded font-mono text-lg break-all mt-1 mb-2">
+                    {lastCheckedPin}
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleCopy(voucherInfo.token)}
-                    className="h-6 p-1 text-xs"
+                    onClick={() => handleCopy(lastCheckedPin)}
+                    className="h-6 p-1 text-xs ml-2"
+                    title="Copy PIN"
                   >
-                    <Copy className="h-3 w-3 mr-1" />
+                    <Copy className="h-4 w-4 mr-1" />
                     {copied ? 'Copied!' : 'Copy'}
                   </Button>
                 </div>
-                <div className="text-center bg-gray-100 p-2 rounded font-mono text-sm break-all">
-                  {voucherInfo.token}
-                </div>
-                <div className="text-xs space-y-1">
-                  <div><strong>Status:</strong> {voucherInfo.status}</div>
-                  <div><strong>Serial:</strong> {voucherInfo.serialNumber}</div>
-                  <div><strong>Expires:</strong> {formatDate(voucherInfo.expiryDateTime)}</div>
-                  <div><strong>Voucher Type:</strong> {voucherInfo.voucherType}</div>
-                  <div><strong>Sale Date:</strong> {formatDate(voucherInfo.saleDateTime)}</div>
-                  <div><strong>Entity Name:</strong> {voucherInfo.entityName}</div>
-                </div>
-              </CardContent>
+              </div>
+              <div className="text-xs space-y-1 px-4 pb-4 pt-2">
+                <div><strong>Status:</strong> {voucherInfo.status}</div>
+                <div><strong>Serial:</strong> {voucherInfo.serialNumber}</div>
+                <div><strong>Expires:</strong> {formatDate(voucherInfo.expiryDateTime)}</div>
+                <div><strong>Voucher Type:</strong> {voucherInfo.voucherType}</div>
+                <div><strong>Sale Date:</strong> {formatDate(voucherInfo.saleDateTime)}</div>
+                <div><strong>Entity Name:</strong> {voucherInfo.entityName}</div>
+              </div>
             </Card>
           )}
 
