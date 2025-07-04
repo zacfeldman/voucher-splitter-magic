@@ -35,7 +35,7 @@ const SplitResults: React.FC<SplitResultsProps> = ({ splitVouchers, onStartOver,
   };
 
   const downloadResults = () => {
-    const data = splitVouchers.map(voucher => ({
+    const data = safeSplitVouchers.map(voucher => ({
       'Token': voucher.token,
       'Amount': formatCurrency(voucher.amount),
       'Serial Number': voucher.serialNumber,
@@ -67,7 +67,7 @@ const SplitResults: React.FC<SplitResultsProps> = ({ splitVouchers, onStartOver,
 
   const downloadPDF = () => {
     const doc = new jsPDF();
-    splitVouchers.forEach((voucher, idx) => {
+    safeSplitVouchers.forEach((voucher, idx) => {
       let y = 20 + idx * 65;
       // Voucher number
       doc.setFontSize(16);
@@ -112,7 +112,7 @@ const SplitResults: React.FC<SplitResultsProps> = ({ splitVouchers, onStartOver,
   };
 
   const handleShare = async () => {
-    const shareText = splitVouchers.map((voucher, idx) =>
+    const shareText = safeSplitVouchers.map((voucher, idx) =>
       `Voucher ${idx + 1}\nToken: ${voucher.token}\nAmount: ${formatCurrency(voucher.amount)}\nSerial: ${voucher.serialNumber}\nExpires: ${voucher.expiryDateTime ? new Date(voucher.expiryDateTime).toLocaleDateString() : ''}\n---`
     ).join('\n\n');
     if (navigator.share) {
@@ -130,7 +130,8 @@ const SplitResults: React.FC<SplitResultsProps> = ({ splitVouchers, onStartOver,
     }
   };
 
-  const totalValue = splitVouchers.reduce((sum, voucher) => sum + voucher.amount, 0);
+  const safeSplitVouchers = Array.isArray(splitVouchers) ? splitVouchers : [];
+  const totalValue = safeSplitVouchers.reduce((sum, voucher) => sum + voucher.amount, 0);
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
@@ -190,7 +191,7 @@ const SplitResults: React.FC<SplitResultsProps> = ({ splitVouchers, onStartOver,
             </div>
           </div>
           <p className="text-muted-foreground mt-2">
-            Your voucher has been split into {splitVouchers.length} new vouchers totaling {formatCurrency(totalValue)}
+            Your voucher has been split into {safeSplitVouchers.length} new vouchers totaling {formatCurrency(totalValue)}
           </p>
         </CardHeader>
         <CardContent>
@@ -202,7 +203,7 @@ const SplitResults: React.FC<SplitResultsProps> = ({ splitVouchers, onStartOver,
       {(() => {
         // Helper to chunk array into groups of 4
         const chunkArray = (arr, size) => arr.length === 0 ? [] : [arr.slice(0, size), ...chunkArray(arr.slice(size), size)];
-        const voucherChunks = chunkArray(splitVouchers, 4);
+        const voucherChunks = chunkArray(safeSplitVouchers, 4);
         return voucherChunks.map((chunk, groupIdx) => (
           <div key={groupIdx} className="flex flex-wrap justify-center gap-6 px-4 py-4 mb-16">
             {chunk.map((voucher, index) => {

@@ -122,7 +122,7 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
         pin: voucherPin,
         splitVouchers: desiredVouchers,
       }, authToken);
-      onSplitComplete(response.splitVouchers);
+      onSplitComplete(response.SplitVouchers || []);
       toast({
         title: "Success",
         description: response.message || "Voucher split successfully",
