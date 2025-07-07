@@ -27,7 +27,8 @@ const VoucherBalanceChecker: React.FC<VoucherBalanceCheckerProps> = ({ onBack })
   const [lastCheckedPin, setLastCheckedPin] = useState<string>("");
 
   const handleCheckBalance = async () => {
-    if (!pin) {
+    const sanitizedPin = pin.replace(/\s+/g, '');
+    if (!sanitizedPin) {
       toast({
         title: "Error",
         description: "Please enter a voucher PIN",
@@ -38,9 +39,9 @@ const VoucherBalanceChecker: React.FC<VoucherBalanceCheckerProps> = ({ onBack })
 
     setLoading(true);
     try {
-      const response = await checkVoucherBalance(pin);
+      const response = await checkVoucherBalance(sanitizedPin);
       setVoucherInfo(response);
-      setLastCheckedPin(pin);
+      setLastCheckedPin(sanitizedPin);
       toast({
         title: "Success",
         description: "Voucher balance retrieved successfully",
@@ -77,7 +78,7 @@ const VoucherBalanceChecker: React.FC<VoucherBalanceCheckerProps> = ({ onBack })
               type="text"
               placeholder="Enter voucher PIN"
               value={pin}
-              onChange={(e) => setPin(e.target.value)}
+              onChange={(e) => setPin(e.target.value.replace(/\s+/g, ''))}
             />
           </div>
 

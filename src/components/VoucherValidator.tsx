@@ -19,7 +19,8 @@ const VoucherValidator: React.FC<VoucherValidatorProps> = ({ onVoucherValidated,
   const [isValidating, setIsValidating] = useState(false);
 
   const handleValidate = async () => {
-    if (!pin.trim()) {
+    const sanitizedPin = pin.replace(/\s+/g, '');
+    if (!sanitizedPin) {
       toast({
         title: "Error",
         description: "Please enter a voucher PIN",
@@ -33,7 +34,7 @@ const VoucherValidator: React.FC<VoucherValidatorProps> = ({ onVoucherValidated,
       if (authToken === null) {
         throw new Error("Authentication token not available.");
       }
-      const response = await validateVoucher({ pin: pin.trim() }, authToken);
+      const response = await validateVoucher({ pin: sanitizedPin }, authToken);
       
       if (!response.VoucherCanBeSplit) {
         toast({
@@ -44,7 +45,7 @@ const VoucherValidator: React.FC<VoucherValidatorProps> = ({ onVoucherValidated,
         return;
       }
 
-      onVoucherValidated(response, pin.trim());
+      onVoucherValidated(response, sanitizedPin);
       toast({
         title: "Success",
         description: "Voucher validated successfully",
@@ -83,7 +84,7 @@ const VoucherValidator: React.FC<VoucherValidatorProps> = ({ onVoucherValidated,
             type="text"
             placeholder="Enter voucher PIN"
             value={pin}
-            onChange={(e) => setPin(e.target.value.trim())}
+            onChange={(e) => setPin(e.target.value.replace(/\s+/g, ''))}
             onKeyPress={(e) => e.key === 'Enter' && handleValidate()}
             disabled={isValidating}
             className="text-center text-lg tracking-wider"

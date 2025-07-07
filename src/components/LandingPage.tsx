@@ -17,7 +17,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSplitVoucher, onCheckBalanc
         <path d="M0,500 Q360,450 720,500 T1440,500" stroke="#fff" strokeOpacity="0.08" strokeWidth="2" fill="none" />
       </svg>
       {/* Hero Card with Logo */}
-      <div className="relative z-10 flex flex-col items-center mt-24 mb-12">
+      <div className="relative z-10 flex flex-col items-center mt-8 mb-4">
         <div className="bg-white rounded-2xl shadow-2xl px-8 py-6 flex flex-col items-center" style={{minWidth: 320, maxWidth: 400}}>
           <img src="/blu-voucher-logo.png" alt="Blu Voucher Logo" className="h-16 w-auto mb-2" />
         </div>
