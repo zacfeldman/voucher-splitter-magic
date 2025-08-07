@@ -7,9 +7,10 @@ interface LandingPageProps {
   onCheckBalance: () => void;
   onRedeemAirtime: () => void;
   onRedeemElectricity: () => void;
+  onRedeemBetway: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onSplitVoucher, onCheckBalance, onRedeemAirtime, onRedeemElectricity }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onSplitVoucher, onCheckBalance, onRedeemAirtime, onRedeemElectricity, onRedeemBetway }) => {
   return (
     <div className="min-h-screen w-full flex flex-col justify-center items-center relative overflow-hidden" style={{background: 'linear-gradient(120deg, #3B4CB8 0%, #A23BA3 60%, #E13CA0 100%)'}}>
       {/* SVG Wavy Overlay */}
@@ -28,7 +29,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSplitVoucher, onCheckBalanc
         <p className="text-white text-lg md:text-xl text-center opacity-90 font-sans mb-2">Your voucher, your way!</p>
       </div>
       {/* Main Actions */}
-      <div className="relative z-10 grid grid-cols-1 md:grid-cols-4 gap-12 max-w-5xl w-full px-4 mb-32">
+      <div className="relative z-10 grid grid-cols-1 md:grid-cols-5 gap-8 max-w-6xl w-full px-4 mb-32">
         {/* Split Voucher Card */}
         <Card className="hover:shadow-2xl transition-shadow bg-white/90 backdrop-blur-md">
           <CardContent className="p-10 text-center">
@@ -79,6 +80,19 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSplitVoucher, onCheckBalanc
             <h2 className="text-2xl font-semibold mb-2 text-primary">Redeem for Electricity</h2>
             <p className="text-muted-foreground mb-4">Redeem your voucher for prepaid electricity</p>
             <Button onClick={onRedeemElectricity} variant="outline" className="w-full">Redeem Electricity</Button>
+          </CardContent>
+        </Card>
+        {/* Redeem for Betway Card */}
+        <Card className="hover:shadow-2xl transition-shadow bg-white/90 backdrop-blur-md">
+          <CardContent className="p-10 text-center">
+            <div className="mb-4">
+              <svg className="w-12 h-12 mx-auto text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6C9.79 2 8 3.79 8 6s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 18c-4.41 0-8-1.79-8-4v-2c0-2.21 3.59-4 8-4s8 1.79 8 4v2c0 2.21-3.59 4-8 4z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-semibold mb-2 text-primary">Top Up Betway</h2>
+            <p className="text-muted-foreground mb-4">Redeem your voucher directly to your Betway account</p>
+            <Button onClick={onRedeemBetway} variant="outline" className="w-full">Top Up Betway</Button>
           </CardContent>
         </Card>
       </div>

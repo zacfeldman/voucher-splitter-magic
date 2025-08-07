@@ -18,7 +18,8 @@ const VoucherPurchase: React.FC<{
   onBack: () => void;
   onRedeemAirtimeDirect?: (token: string, amount: number) => void;
   onRedeemElectricityDirect?: (token: string, amount: number) => void;
-}> = ({ onBack, onRedeemAirtimeDirect, onRedeemElectricityDirect }) => {
+  onRedeemBetwayDirect?: (token: string, amount: number) => void;
+}> = ({ onBack, onRedeemAirtimeDirect, onRedeemElectricityDirect, onRedeemBetwayDirect }) => {
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [voucher, setVoucher] = useState<any>(null);
@@ -79,6 +80,11 @@ const VoucherPurchase: React.FC<{
               {onRedeemElectricityDirect && voucher.token && (
                 <Button variant="default" onClick={() => onRedeemElectricityDirect(voucher.token, voucher.amount)}>
                   Redeem Now for Electricity
+                </Button>
+              )}
+              {onRedeemBetwayDirect && voucher.token && (
+                <Button variant="secondary" onClick={() => onRedeemBetwayDirect(voucher.token, voucher.amount)}>
+                  Top Up Betway Now
                 </Button>
               )}
             </div>

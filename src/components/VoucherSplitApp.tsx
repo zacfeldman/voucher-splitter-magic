@@ -14,8 +14,9 @@ import Register from './Register';
 import VoucherPurchase from './VoucherPurchase';
 import VoucherAirtimeRedeem from './VoucherAirtimeRedeem';
 import VoucherElectricityRedeem from './VoucherElectricityRedeem';
+import VoucherBetwayRedeem from './VoucherBetwayRedeem';
 
-type AppStep = 'landing' | 'validate' | 'split' | 'results' | 'balance' | 'history' | 'login' | 'purchase' | 'airtime' | 'airtime-direct' | 'electricity' | 'electricity-direct';
+type AppStep = 'landing' | 'validate' | 'split' | 'results' | 'balance' | 'history' | 'login' | 'purchase' | 'airtime' | 'airtime-direct' | 'electricity' | 'electricity-direct' | 'betway' | 'betway-direct';
 
 // Vite provides import.meta.env for environment variables
 const isTestMode = import.meta.env.VITE_TEST_MODE === 'true';
@@ -185,6 +186,15 @@ const VoucherSplitApp: React.FC = () => {
     setCurrentStep('electricity-direct');
   };
 
+  const handleGoToBetway = () => {
+    setCurrentStep('betway');
+  };
+  const handleGoToBetwayDirect = (token?: string, amount?: number) => {
+    setBetwayDirectPin(token);
+    setBetwayDirectAmount(amount);
+    setCurrentStep('betway-direct');
+  };
+
   // Only require login for history and saving splits
   const [requireAuth, setRequireAuth] = useState(false);
 
@@ -221,6 +231,8 @@ const VoucherSplitApp: React.FC = () => {
   const [airtimeDirectAmount, setAirtimeDirectAmount] = useState<number | undefined>(undefined);
   const [electricityDirectPin, setElectricityDirectPin] = useState<string | undefined>(undefined);
   const [electricityDirectAmount, setElectricityDirectAmount] = useState<number | undefined>(undefined);
+  const [betwayDirectPin, setBetwayDirectPin] = useState<string | undefined>(undefined);
+  const [betwayDirectAmount, setBetwayDirectAmount] = useState<number | undefined>(undefined);
 
   return (
     <div className="min-h-screen w-full flex flex-col relative overflow-hidden" style={{background: 'linear-gradient(120deg, #3B4CB8 0%, #A23BA3 60%, #E13CA0 100%)'}}>
@@ -268,6 +280,7 @@ const VoucherSplitApp: React.FC = () => {
               onCheckBalance={handleGoToBalance}
               onRedeemAirtime={handleGoToAirtime}
               onRedeemElectricity={handleGoToElectricity}
+              onRedeemBetway={handleGoToBetway}
             />
           ) : currentStep === 'validate' && (
             <VoucherValidator onVoucherValidated={handleVoucherValidated} authToken={authToken} onBack={handleBack} />
@@ -301,6 +314,7 @@ const VoucherSplitApp: React.FC = () => {
               onBack={handleBack}
               onRedeemAirtimeDirect={(token, amount) => handleGoToAirtimeDirect(token, amount)}
               onRedeemElectricityDirect={(token, amount) => handleGoToElectricityDirect(token, amount)}
+              onRedeemBetwayDirect={(token, amount) => handleGoToBetwayDirect(token, amount)}
             />
           )}
           {currentStep === 'airtime-direct' && (
@@ -311,6 +325,12 @@ const VoucherSplitApp: React.FC = () => {
           )}
           {currentStep === 'electricity-direct' && (
             <VoucherElectricityRedeem onBack={handleBack} skipCheckStatus prefillPin={electricityDirectPin} prefillAmount={electricityDirectAmount} />
+          )}
+          {currentStep === 'betway' && (
+            <VoucherBetwayRedeem onBack={handleBack} />
+          )}
+          {currentStep === 'betway-direct' && (
+            <VoucherBetwayRedeem onBack={handleBack} skipCheckStatus prefillPin={betwayDirectPin} prefillAmount={betwayDirectAmount} />
           )}
         </div>
       </div>

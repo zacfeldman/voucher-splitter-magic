@@ -299,3 +299,46 @@ export const vendElectricity = async ({
   }
   return response.json();
 };
+
+export const redeemBetway = async ({ requestId, accountNumber, tokenNumber, amount }: {
+  requestId: string,
+  accountNumber: string,
+  tokenNumber: string,
+  amount: number,
+}): Promise<any> => {
+  const url = 'http://localhost:3001/api/redeem-betway';
+  const payload = {
+    requestId,
+    accountNumber,
+    tokenNumber,
+    amount,
+  };
+  const headers = {
+    'accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+  console.log('[redeemBetway] Request URL:', url);
+  console.log('[redeemBetway] Request Headers:', headers);
+  console.log('[redeemBetway] Request Payload:', payload);
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+  let responseBody;
+  try {
+    responseBody = await response.clone().json();
+  } catch (e) {
+    responseBody = await response.clone().text();
+  }
+  console.log('[redeemBetway] Response Status:', response.status);
+  console.log('[redeemBetway] Response Body:', responseBody);
+  if (!response.ok) {
+    let errorMsg = `Failed to redeem to Betway: HTTP ${response.status}`;
+    if (responseBody && typeof responseBody === 'object' && responseBody.error) {
+      errorMsg = responseBody.error;
+    }
+    throw new Error(errorMsg);
+  }
+  return responseBody;
+};
