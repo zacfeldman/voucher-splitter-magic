@@ -76,9 +76,6 @@ const VoucherValidator: React.FC<VoucherValidatorProps> = ({ onVoucherValidated,
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="pin" className="text-sm font-medium">
-            Voucher PIN
-          </Label>
           <Input
             id="pin"
             type="text"

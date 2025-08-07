@@ -49,6 +49,18 @@ export default defineConfig(({ mode }) => ({
         secure: false,
         rewrite: (path) => path.replace(/^\/voucher-balance-proxy/, ''),
       },
+      '/api-purchase': {
+        target: 'https://api.qa.bltelecoms.net',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api-purchase/, ''),
+      },
+      '/airtime-proxy': {
+        target: 'https://api.qa.bltelecoms.net',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/airtime-proxy/, ''),
+      },
     },
   },
   plugins: [

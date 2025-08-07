@@ -11,8 +11,11 @@ import { toast } from '@/hooks/use-toast';
 import VoucherHistory from './VoucherHistory';
 import Login from './Login';
 import Register from './Register';
+import VoucherPurchase from './VoucherPurchase';
+import VoucherAirtimeRedeem from './VoucherAirtimeRedeem';
+import VoucherElectricityRedeem from './VoucherElectricityRedeem';
 
-type AppStep = 'landing' | 'validate' | 'split' | 'results' | 'balance' | 'history' | 'login' | 'purchase';
+type AppStep = 'landing' | 'validate' | 'split' | 'results' | 'balance' | 'history' | 'login' | 'purchase' | 'airtime' | 'airtime-direct' | 'electricity' | 'electricity-direct';
 
 // Vite provides import.meta.env for environment variables
 const isTestMode = import.meta.env.VITE_TEST_MODE === 'true';
@@ -94,7 +97,27 @@ const VoucherSplitApp: React.FC = () => {
     setCurrentStep('results');
     // Save to history in localStorage
     const history = JSON.parse(localStorage.getItem('voucherHistory') || '[]');
-    const newHistory = [...history, ...vouchers.map(v => ({ ...v, splitAt: new Date().toISOString() }))];
+    // Add the original voucher as redeemed
+    if (validatedVoucher && voucherPin) {
+      const redeemedVoucher = {
+        serialNumber: validatedVoucher.SerialNumber,
+        amount: validatedVoucher.ValueCents,
+        token: voucherPin,
+        status: 'redeemed',
+        type: 'split-original',
+        splitAt: new Date().toISOString(),
+      };
+      history.push(redeemedVoucher);
+    }
+    const newHistory = [
+      ...history,
+      ...vouchers.map(v => ({
+        ...v,
+        splitAt: new Date().toISOString(),
+        type: 'split',
+        status: 'Active',
+      }))
+    ];
     localStorage.setItem('voucherHistory', JSON.stringify(newHistory));
   };
 
@@ -143,6 +166,25 @@ const VoucherSplitApp: React.FC = () => {
     setCurrentStep(isTestMode ? 'split' : 'validate');
   };
 
+  const handleGoToAirtime = () => {
+    setCurrentStep('airtime');
+  };
+
+  const handleGoToAirtimeDirect = (token?: string, amount?: number) => {
+    setAirtimeDirectPin(token);
+    setAirtimeDirectAmount(amount);
+    setCurrentStep('airtime-direct');
+  };
+
+  const handleGoToElectricity = () => {
+    setCurrentStep('electricity');
+  };
+  const handleGoToElectricityDirect = (token?: string, amount?: number) => {
+    setElectricityDirectPin(token);
+    setElectricityDirectAmount(amount);
+    setCurrentStep('electricity-direct');
+  };
+
   // Only require login for history and saving splits
   const [requireAuth, setRequireAuth] = useState(false);
 
@@ -174,6 +216,11 @@ const VoucherSplitApp: React.FC = () => {
       <Login onLogin={(user) => { handleLogin(user); setCurrentStep('landing'); }} onSwitchToRegister={() => setShowRegister(true)} />
     );
   }
+
+  const [airtimeDirectPin, setAirtimeDirectPin] = useState<string | undefined>(undefined);
+  const [airtimeDirectAmount, setAirtimeDirectAmount] = useState<number | undefined>(undefined);
+  const [electricityDirectPin, setElectricityDirectPin] = useState<string | undefined>(undefined);
+  const [electricityDirectAmount, setElectricityDirectAmount] = useState<number | undefined>(undefined);
 
   return (
     <div className="min-h-screen w-full flex flex-col relative overflow-hidden" style={{background: 'linear-gradient(120deg, #3B4CB8 0%, #A23BA3 60%, #E13CA0 100%)'}}>
@@ -216,7 +263,12 @@ const VoucherSplitApp: React.FC = () => {
               Loading authentication...
             </div>
           ) : currentStep === 'landing' ? (
-            <LandingPage onSplitVoucher={handleStartSplit} onCheckBalance={handleGoToBalance} />
+            <LandingPage
+              onSplitVoucher={handleStartSplit}
+              onCheckBalance={handleGoToBalance}
+              onRedeemAirtime={handleGoToAirtime}
+              onRedeemElectricity={handleGoToElectricity}
+            />
           ) : currentStep === 'validate' && (
             <VoucherValidator onVoucherValidated={handleVoucherValidated} authToken={authToken} onBack={handleBack} />
           )}
@@ -243,6 +295,22 @@ const VoucherSplitApp: React.FC = () => {
             <>
               <VoucherHistory />
             </>
+          )}
+          {currentStep === 'purchase' && (
+            <VoucherPurchase
+              onBack={handleBack}
+              onRedeemAirtimeDirect={(token, amount) => handleGoToAirtimeDirect(token, amount)}
+              onRedeemElectricityDirect={(token, amount) => handleGoToElectricityDirect(token, amount)}
+            />
+          )}
+          {currentStep === 'airtime-direct' && (
+            <VoucherAirtimeRedeem onBack={handleBack} skipCheckStatus prefillPin={airtimeDirectPin} prefillAmount={airtimeDirectAmount} />
+          )}
+          {currentStep === 'electricity' && (
+            <VoucherElectricityRedeem onBack={handleBack} />
+          )}
+          {currentStep === 'electricity-direct' && (
+            <VoucherElectricityRedeem onBack={handleBack} skipCheckStatus prefillPin={electricityDirectPin} prefillAmount={electricityDirectAmount} />
           )}
         </div>
       </div>

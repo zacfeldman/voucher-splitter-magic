@@ -10,7 +10,7 @@ interface TopNavBarProps {
 const navItems = [
   { label: 'Home', step: 'landing' },
   { label: 'Split Voucher', step: 'validate' },
-  { label: 'Check Balance', step: 'balance' },
+  { label: 'Check Voucher', step: 'balance' },
   { label: 'Purchase Voucher', step: 'purchase' },
   { label: 'History', step: 'history' },
 ];
@@ -32,10 +32,10 @@ const TopNavBar: React.FC<TopNavBarProps> = ({ currentStep, onNavigate, user, on
   };
 
   return (
-    <nav className="w-full bg-white/70 backdrop-blur-md shadow-md mb-8 border-b border-pink-500">
+    <nav className="w-full bg-white/70 backdrop-blur-md shadow-md mb-4 border-b border-pink-500">
       <div className="container mx-auto flex items-center justify-between py-3 px-4">
         <div className="flex items-center gap-3 cursor-pointer select-none" onClick={() => onNavigate('landing')}> 
-          <div className="bg-white rounded-2xl shadow-2xl px-4 py-2 flex items-center" style={{minWidth: 120, maxWidth: 180}}>
+          <div className="bg-white rounded-2xl shadow-2xl px-4 py-1 flex items-center" style={{minWidth: 120, maxWidth: 180}}>
             <img src="/blu-voucher-logo.png" alt="Blu Voucher Logo" className="h-8 w-auto" />
           </div>
         </div>

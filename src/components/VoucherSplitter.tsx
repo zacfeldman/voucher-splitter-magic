@@ -140,16 +140,15 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto space-y-6">
-      {/* Original Voucher Info */}
+    <div className="w-full max-w-2xl mx-auto space-y-10">
+      {/* Split Your Voucher Info */}
       <Card className="glass-effect shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold text-center">Original Voucher</CardTitle>
+        <CardHeader className="pb-6 pt-8">
+          <CardTitle className="text-xl font-bold text-center">Split Your Voucher</CardTitle>
+          <p className="text-center text-blue-700 font-semibold mt-1">Voucher Amount: {formatCurrency(validatedVoucher.ValueCents)}</p>
+          <p className="text-center text-muted-foreground mt-1">Enter the amounts you'd like to split your voucher into</p>
         </CardHeader>
-        <CardContent className="text-center space-y-2">
-          <div className="text-3xl font-bold text-blue-600">
-            {formatCurrency(validatedVoucher.ValueCents)}
-          </div>
+        <CardContent className="text-center space-y-4">
           <div className="text-sm text-muted-foreground">
             Serial: {validatedVoucher.SerialNumber}
           </div>
@@ -160,14 +159,14 @@ const VoucherSplitter: React.FC<VoucherSplitterProps> = ({
       </Card>
 
       {/* Split Configuration */}
-      <Card className="glass-effect shadow-xl">
-        <CardHeader>
+      <Card className="glass-effect shadow-xl mt-8">
+        <CardHeader className="pb-6 pt-8">
           <CardTitle className="text-xl font-bold text-center">Configure Split</CardTitle>
           <p className="text-center text-muted-foreground">
             Add the amounts you want to split into
           </p>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="flex justify-between items-center mb-2">
             <span className="font-medium">Total Split:</span>
             <span className={totalSplitValue === validatedVoucher.ValueCents ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>

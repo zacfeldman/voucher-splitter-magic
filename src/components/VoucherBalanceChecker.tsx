@@ -42,9 +42,18 @@ const VoucherBalanceChecker: React.FC<VoucherBalanceCheckerProps> = ({ onBack })
       const response = await checkVoucherBalance(sanitizedPin);
       setVoucherInfo(response);
       setLastCheckedPin(sanitizedPin);
+      // Save to history in localStorage
+      const history = JSON.parse(localStorage.getItem('voucherHistory') || '[]');
+      const newEntry = {
+        ...response,
+        checkedAt: new Date().toISOString(),
+        type: 'status-check',
+        status: response.status || 'Unknown',
+      };
+      localStorage.setItem('voucherHistory', JSON.stringify([...history, newEntry]));
       toast({
         title: "Success",
-        description: "Voucher balance retrieved successfully",
+        description: "Voucher details retrieved successfully",
       });
     } catch (error) {
       toast({
@@ -64,15 +73,14 @@ const VoucherBalanceChecker: React.FC<VoucherBalanceCheckerProps> = ({ onBack })
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader>
-        <CardTitle>Check Voucher Balance</CardTitle>
-        <p className="text-muted-foreground">Enter your voucher PIN to check its balance</p>
+    <Card className="w-full max-w-md mx-auto p-8 mt-12">
+      <CardHeader className="mb-6">
+        <CardTitle>Check Voucher Details</CardTitle>
+        <p className="text-muted-foreground">Enter your voucher PIN to check its details</p>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="pin">Voucher PIN</Label>
             <Input
               id="pin"
               type="text"
@@ -86,7 +94,7 @@ const VoucherBalanceChecker: React.FC<VoucherBalanceCheckerProps> = ({ onBack })
             <Card className="glass-effect shadow-lg hover:shadow-xl transition-shadow border-blue-100 bg-white">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-bold text-center text-blue-600">
-                  Voucher Balance
+                  Voucher Details
                 </CardTitle>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">
@@ -128,7 +136,7 @@ const VoucherBalanceChecker: React.FC<VoucherBalanceCheckerProps> = ({ onBack })
               Back
             </Button>
             <Button onClick={handleCheckBalance} disabled={loading}>
-              {loading ? "Checking..." : "Check Balance"}
+              {loading ? "Checking..." : "Check Voucher"}
             </Button>
           </div>
         </div>

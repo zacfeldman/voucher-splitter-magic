@@ -124,3 +124,178 @@ export const checkVoucherBalance = async (pin: string): Promise<any> => {
   const data = await response.json();
   return data;
 };
+
+export const purchaseVoucher = async ({ amount, requestId, productId = 13, vendMetaData }: {
+  amount: number,
+  requestId: string,
+  productId?: number,
+  vendMetaData?: any,
+}): Promise<any> => {
+  const payload: any = {
+    requestId,
+    productId,
+    amount,
+  };
+  if (vendMetaData) payload.vendMetaData = vendMetaData;
+  const response = await fetch("http://localhost:3001/api/purchase", {
+    method: "POST",
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) {
+    let errorMsg = `Failed to purchase voucher: HTTP ${response.status}`;
+    try {
+      const errorData = await response.json();
+      errorMsg = errorData.error || errorMsg;
+    } catch {}
+    throw new Error(errorMsg);
+  }
+  return response.json();
+};
+
+export const redeemAirtime = async ({ requestId, mobileNumber, tokenNumber, amount }: {
+  requestId: string,
+  mobileNumber: string,
+  tokenNumber: string,
+  amount: number,
+}): Promise<any> => {
+  const url = 'http://localhost:3001/api/redeem-airtime';
+  const payload = {
+    requestId,
+    mobileNumber,
+    tokenNumber,
+    amount,
+  };
+  const headers = {
+    'accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+  console.log('[redeemAirtime] Request URL:', url);
+  console.log('[redeemAirtime] Request Headers:', headers);
+  console.log('[redeemAirtime] Request Payload:', payload);
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+  let responseBody;
+  try {
+    responseBody = await response.clone().json();
+  } catch (e) {
+    responseBody = await response.clone().text();
+  }
+  console.log('[redeemAirtime] Response Status:', response.status);
+  console.log('[redeemAirtime] Response Body:', responseBody);
+  if (!response.ok) {
+    let errorMsg = `Failed to redeem airtime: HTTP ${response.status}`;
+    if (responseBody && typeof responseBody === 'object' && responseBody.error) {
+      errorMsg = responseBody.error;
+    }
+    throw new Error(errorMsg);
+  }
+  return responseBody;
+};
+
+export const redeemElectricity = async ({ requestId, mobileNumber, meterNumber, tokenNumber, amount }: {
+  requestId: string,
+  mobileNumber: string,
+  meterNumber: string,
+  tokenNumber: string,
+  amount: number,
+}): Promise<any> => {
+  const url = 'http://localhost:3001/api/redeem-electricity';
+  const payload = {
+    requestId,
+    mobileNumber,
+    meterNumber,
+    tokenNumber,
+    amount,
+  };
+  const headers = {
+    'accept': 'application/json',
+    'Content-Type': 'application/json',
+  };
+  console.log('[redeemElectricity] Request URL:', url);
+  console.log('[redeemElectricity] Request Headers:', headers);
+  console.log('[redeemElectricity] Request Payload:', payload);
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+  let responseBody;
+  try {
+    responseBody = await response.clone().json();
+  } catch (e) {
+    responseBody = await response.clone().text();
+  }
+  console.log('[redeemElectricity] Response Status:', response.status);
+  console.log('[redeemElectricity] Response Body:', responseBody);
+  if (!response.ok) {
+    let errorMsg = `Failed to redeem electricity: HTTP ${response.status}`;
+    if (responseBody && typeof responseBody === 'object' && responseBody.error) {
+      errorMsg = responseBody.error;
+    }
+    throw new Error(errorMsg);
+  }
+  return responseBody;
+};
+
+export const confirmElectricityMeter = async ({
+  amount,
+  meterNumber,
+  mobileNumber,
+  voucherToken,
+}: {
+  amount: number,
+  meterNumber: string,
+  mobileNumber: string,
+  voucherToken: string,
+}) => {
+  const params = new URLSearchParams({
+    amount: amount.toString(),
+    'meter-number': meterNumber,
+    'mobile-number': mobileNumber,
+    'voucher-token': voucherToken,
+  });
+  const url = `http://localhost:3001/api/electricity-confirm?${params.toString()}`;
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) {
+    throw new Error('Failed to confirm meter');
+  }
+  return response.json();
+};
+
+export const vendElectricity = async ({
+  requestId,
+  conversationId,
+  reference,
+}: {
+  requestId: string,
+  conversationId: string,
+  reference: string,
+}) => {
+  const url = 'http://localhost:3001/api/electricity-vend';
+  const payload = { requestId, conversationId, reference };
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to vend electricity');
+  }
+  return response.json();
+};

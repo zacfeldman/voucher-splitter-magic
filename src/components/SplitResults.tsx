@@ -168,7 +168,7 @@ const SplitResults: React.FC<SplitResultsProps> = ({ splitVouchers, onStartOver,
                         className={`w-full text-left px-4 py-2 text-sm ${active ? 'bg-blue-100' : ''}`}
                         onClick={downloadResults}
                       >
-                        CSV
+                        Download Vouchers CSV
                       </button>
                     )}
                   </Menu.Item>
