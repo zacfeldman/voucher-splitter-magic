@@ -26,6 +26,20 @@ const VoucherSplitApp: React.FC = () => {
   const [loadingAuth, setLoadingAuth] = useState<boolean>(true);
   const [user, setUser] = useState<{ phone: string } | null>(null);
   const [showRegister, setShowRegister] = useState(false);
+  
+  // Move all useState hooks to the top to prevent hooks violation
+  const [airtimeDirectPin, setAirtimeDirectPin] = useState<string | undefined>(undefined);
+  const [airtimeDirectAmount, setAirtimeDirectAmount] = useState<number | undefined>(undefined);
+  const [electricityDirectPin, setElectricityDirectPin] = useState<string | undefined>(undefined);
+  const [electricityDirectAmount, setElectricityDirectAmount] = useState<number | undefined>(undefined);
+  const [betwayDirectPin, setBetwayDirectPin] = useState<string | undefined>(undefined);
+  const [betwayDirectAmount, setBetwayDirectAmount] = useState<number | undefined>(undefined);
+  
+  // Only require login for history and saving splits
+  const [requireAuth, setRequireAuth] = useState(false);
+  
+  // Add state for showing edit profile modal (placeholder for now)
+  const [showEditProfile, setShowEditProfile] = useState(false);
 
   // Persist login state
   useEffect(() => {
@@ -186,14 +200,12 @@ const VoucherSplitApp: React.FC = () => {
   const handleGoToBetway = () => {
     setCurrentStep('betway');
   };
+  
   const handleGoToBetwayDirect = (token?: string, amount?: number) => {
     setBetwayDirectPin(token);
     setBetwayDirectAmount(amount);
     setCurrentStep('betway-direct');
   };
-
-  // Only require login for history and saving splits
-  const [requireAuth, setRequireAuth] = useState(false);
 
   // Show login/register only if requireAuth is true and not logged in
   useEffect(() => {
@@ -203,9 +215,6 @@ const VoucherSplitApp: React.FC = () => {
       setRequireAuth(false);
     }
   }, [currentStep, user]);
-
-  // Add state for showing edit profile modal (placeholder for now)
-  const [showEditProfile, setShowEditProfile] = useState(false);
 
   const handleProfileAction = (action: 'edit' | 'logout') => {
     if (action === 'logout') {
@@ -224,12 +233,6 @@ const VoucherSplitApp: React.FC = () => {
     );
   }
 
-  const [airtimeDirectPin, setAirtimeDirectPin] = useState<string | undefined>(undefined);
-  const [airtimeDirectAmount, setAirtimeDirectAmount] = useState<number | undefined>(undefined);
-  const [electricityDirectPin, setElectricityDirectPin] = useState<string | undefined>(undefined);
-  const [electricityDirectAmount, setElectricityDirectAmount] = useState<number | undefined>(undefined);
-  const [betwayDirectPin, setBetwayDirectPin] = useState<string | undefined>(undefined);
-  const [betwayDirectAmount, setBetwayDirectAmount] = useState<number | undefined>(undefined);
 
   return (
     <div className="min-h-screen w-full flex flex-col relative overflow-hidden" style={{background: 'linear-gradient(120deg, #3B4CB8 0%, #A23BA3 60%, #E13CA0 100%)'}}>
