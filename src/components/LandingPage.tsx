@@ -1,24 +1,22 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface LandingPageProps {
-  onSplitVoucher: () => void;
-  onCheckBalance: () => void;
-  onRedeemAirtime: () => void;
-  onRedeemElectricity: () => void;
-  onRedeemBetway: () => void;
+  onSplitVoucher?: () => void;
+  onCheckBalance?: () => void;
+  onRedeemAirtime?: () => void;
+  onRedeemElectricity?: () => void;
+  onRedeemBetway?: () => void;
+  onRedeemVoucher?: () => void;
+  onPurchaseVoucher?: () => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onSplitVoucher, onCheckBalance, onRedeemAirtime, onRedeemElectricity, onRedeemBetway }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onSplitVoucher, onCheckBalance, onRedeemAirtime, onRedeemElectricity, onRedeemBetway, onRedeemVoucher }) => {
+  const navigate = useNavigate();
   return (
-    <div className="min-h-screen w-full flex flex-col justify-center items-center relative overflow-hidden" style={{background: 'linear-gradient(120deg, #3B4CB8 0%, #A23BA3 60%, #E13CA0 100%)'}}>
-      {/* SVG Wavy Overlay */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1440 600" fill="none" xmlns="http://www.w3.org/2000/svg" style={{zIndex: 1}}>
-        <path d="M0,400 Q360,300 720,400 T1440,400 V600 H0 Z" fill="#fff" fillOpacity="0.04" />
-        <path d="M0,350 Q360,250 720,350 T1440,350" stroke="#fff" strokeOpacity="0.12" strokeWidth="2" fill="none" />
-        <path d="M0,500 Q360,450 720,500 T1440,500" stroke="#fff" strokeOpacity="0.08" strokeWidth="2" fill="none" />
-      </svg>
+    <div className="w-full flex flex-col justify-center items-center relative overflow-hidden">
       {/* Hero Card with Logo */}
       <div className="relative z-10 flex flex-col items-center mt-16 mb-10">
         <div className="bg-white rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center" style={{minWidth: 320, maxWidth: 400}}>
@@ -29,7 +27,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSplitVoucher, onCheckBalanc
         <p className="text-white text-lg md:text-xl text-center opacity-90 font-sans mb-2">Your voucher, your way!</p>
       </div>
       {/* Main Actions */}
-      <div className="relative z-10 grid grid-cols-1 md:grid-cols-5 gap-8 max-w-6xl w-full px-4 mb-32">
+      <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl w-full px-4 mb-32">
+        {/* Row 1 */}
+        <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Redeem Voucher Card */}
+        <Card className="hover:shadow-2xl transition-shadow bg-white/90 backdrop-blur-md">
+          <CardContent className="p-10 text-center">
+            <div className="mb-4">
+              <svg className="w-12 h-12 mx-auto text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-semibold mb-2 text-primary">Redeem Voucher</h2>
+            <p className="text-muted-foreground mb-4">Redeem your voucher in full or get a replacement voucher</p>
+            <Button onClick={() => { if (onRedeemVoucher) onRedeemVoucher(); navigate('/redeem'); }} variant="default" className="w-full">Redeem Voucher</Button>
+          </CardContent>
+        </Card>
         {/* Split Voucher Card */}
         <Card className="hover:shadow-2xl transition-shadow bg-white/90 backdrop-blur-md">
           <CardContent className="p-10 text-center">
@@ -40,7 +53,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSplitVoucher, onCheckBalanc
             </div>
             <h2 className="text-2xl font-semibold mb-2 text-primary">Split Voucher</h2>
             <p className="text-muted-foreground mb-4">Split your voucher into smaller denominations</p>
-            <Button onClick={onSplitVoucher} variant="default" className="w-full">Split Voucher</Button>
+            <Button onClick={() => { if (onSplitVoucher) onSplitVoucher(); navigate('/split'); }} variant="default" className="w-full">Split Voucher</Button>
           </CardContent>
         </Card>
         {/* Check Voucher Card */}
@@ -53,7 +66,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSplitVoucher, onCheckBalanc
             </div>
             <h2 className="text-2xl font-semibold mb-2 text-primary">Check Voucher</h2>
             <p className="text-muted-foreground mb-4">View your voucher status and details</p>
-            <Button onClick={onCheckBalance} variant="secondary" className="w-full">Check Voucher</Button>
+            <Button onClick={() => { if (onCheckBalance) onCheckBalance(); navigate('/check'); }} variant="secondary" className="w-full">Check Voucher</Button>
           </CardContent>
         </Card>
         {/* Redeem for Airtime Card */}
@@ -66,7 +79,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSplitVoucher, onCheckBalanc
             </div>
             <h2 className="text-2xl font-semibold mb-2 text-primary">Redeem for Airtime</h2>
             <p className="text-muted-foreground mb-4">Redeem your voucher directly for airtime top-up</p>
-            <Button onClick={onRedeemAirtime} variant="outline" className="w-full">Redeem Airtime</Button>
+            <Button onClick={() => { if (onRedeemAirtime) onRedeemAirtime(); navigate('/airtime'); }} variant="outline" className="w-full">Redeem Airtime</Button>
           </CardContent>
         </Card>
         {/* Redeem for Electricity Card */}
@@ -79,7 +92,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSplitVoucher, onCheckBalanc
             </div>
             <h2 className="text-2xl font-semibold mb-2 text-primary">Redeem for Electricity</h2>
             <p className="text-muted-foreground mb-4">Redeem your voucher for prepaid electricity</p>
-            <Button onClick={onRedeemElectricity} variant="outline" className="w-full">Redeem Electricity</Button>
+            <Button onClick={() => { if (onRedeemElectricity) onRedeemElectricity(); navigate('/electricity'); }} variant="outline" className="w-full">Redeem Electricity</Button>
           </CardContent>
         </Card>
         {/* Redeem for Betway Card */}
@@ -92,12 +105,13 @@ const LandingPage: React.FC<LandingPageProps> = ({ onSplitVoucher, onCheckBalanc
             </div>
             <h2 className="text-2xl font-semibold mb-2 text-primary">Top Up Betway</h2>
             <p className="text-muted-foreground mb-4">Redeem your voucher directly to your Betway account</p>
-            <Button onClick={onRedeemBetway} variant="outline" className="w-full">Top Up Betway</Button>
+            <Button onClick={() => { if (onRedeemBetway) onRedeemBetway(); navigate('/betway'); }} variant="outline" className="w-full">Top Up Betway</Button>
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   );
 };
 
-export default LandingPage; 
+export default LandingPage;

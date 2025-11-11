@@ -34,7 +34,7 @@ const Register: React.FC<RegisterProps> = ({ onRegister, onSwitchToLogin }) => {
       setError('A user with this phone number already exists.');
       return;
     }
-    const newUser = { phone, password };
+  const newUser = { phone, password, wallet: 0 };
     users.push(newUser);
     localStorage.setItem('users', JSON.stringify(users));
     setSuccess('Registration successful! You can now log in.');

@@ -62,17 +62,20 @@ const VoucherAirtimeRedeem: React.FC<VoucherAirtimeRedeemProps> = ({ onBack, ski
         amount: voucherInfo?.valueCents || voucherInfo?.amount || 0,
       });
       setRedemptionResult(result);
-      // Save to history
-      const history = JSON.parse(localStorage.getItem('voucherHistory') || '[]');
-      history.push({
-        type: 'airtime-redemption',
-        pin,
-        mobile,
-        amount: voucherInfo?.valueCents || voucherInfo?.amount || 0,
-        redeemedAt: new Date().toISOString(),
-        response: result,
-      });
-      localStorage.setItem('voucherHistory', JSON.stringify(history));
+      // Save to history in a consistent shape for the table
+      try {
+        const history = JSON.parse(localStorage.getItem('voucherHistory') || '[]');
+        history.push({
+          type: 'airtime-redemption',
+          serialNumber: result?.serialNumber || result?.SerialNumber || '-',
+          token: pin,
+          mobile,
+          amount: voucherInfo?.valueCents || voucherInfo?.amount || 0,
+          status: 'Redeemed',
+          checkedAt: new Date().toISOString(),
+        });
+        localStorage.setItem('voucherHistory', JSON.stringify(history));
+      } catch {}
       setStep('success');
     } catch (err: any) {
       setError(err.message || 'Failed to redeem airtime');

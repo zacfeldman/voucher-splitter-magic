@@ -1,13 +1,20 @@
 const express = require('express');
-const fetch = require('node-fetch').default;
 const cors = require('cors');
 
 const app = express();
-const PORT = 3001;
+const PORT = 3002;
 
 // Allow CORS for local dev
 app.use(cors());
 app.use(express.json());
+
+// Health and root routes
+app.get('/health', (req, res) => {
+  res.json({ ok: true, service: 'backend', port: PORT, time: new Date().toISOString() });
+});
+app.get('/', (req, res) => {
+  res.type('text/plain').send('Backend server is running');
+});
 
 app.post('/api/redeem-airtime', async (req, res) => {
   const { requestId, mobileNumber, tokenNumber, amount } = req.body;
@@ -59,4 +66,4 @@ app.post('/api/purchase', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Backend server running on http://localhost:${PORT}`);
-}); 
+});

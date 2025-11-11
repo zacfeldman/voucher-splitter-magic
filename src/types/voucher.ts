@@ -42,3 +42,9 @@ export interface ErrorResponse {
   errorCode: string;
   error: string;
 }
+
+export interface RedeemVoucherRequest {
+  token: string;
+  amount: number;
+  cellphoneNumber: string;
+}

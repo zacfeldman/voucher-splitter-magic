@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { checkVoucherBalance, redeemBetway } from '@/services/voucherApi';
+import { RedeemSuccess } from './RedeemSuccess';
 
 interface VoucherBetwayRedeemProps {
   onBack: () => void;
@@ -92,6 +93,17 @@ const VoucherBetwayRedeem: React.FC<VoucherBetwayRedeemProps> = ({ onBack, skipC
     setStep('form');
   };
 
+  if (step === 'success') {
+    return (
+      <div className="min-h-screen w-full flex flex-col justify-center items-center bg-gradient-to-br from-indigo-600 via-fuchsia-600 to-pink-400">
+        <RedeemSuccess 
+          amount={redemptionResult?.amount / 100} 
+          replacementVoucher={redemptionResult?.replacementVoucher}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen w-full flex flex-col justify-center items-center bg-gradient-to-br from-indigo-600 via-fuchsia-600 to-pink-400">
       <Card className="w-full max-w-md mt-16">
@@ -149,21 +161,7 @@ const VoucherBetwayRedeem: React.FC<VoucherBetwayRedeemProps> = ({ onBack, skipC
           {step === 'redeeming' && (
             <div className="text-center py-8">Processing Betway top-up, please wait...</div>
           )}
-          {step === 'success' && (
-            <div className="space-y-6 text-center">
-              <div className="text-green-600 text-2xl font-bold">Success!</div>
-              <div>Your Betway account has been topped up successfully.</div>
-              {redemptionResult && (
-                <div className="mt-4 text-left text-xs bg-gray-100 rounded p-2 overflow-x-auto">
-                  <div className="font-bold mb-1">Transaction Details:</div>
-                  {Object.entries(redemptionResult).map(([key, value]) => (
-                    <div key={key}><span className="font-semibold">{key}:</span> {JSON.stringify(value)}</div>
-                  ))}
-                </div>
-              )}
-              <Button variant="default" onClick={onBack}>Back to Home</Button>
-            </div>
-          )}
+          {/* Success state is now handled by the RedeemSuccess component */}
           {step === 'error' && (
             <div className="space-y-6 text-center">
               <div className="text-red-600 text-2xl font-bold">Error</div>

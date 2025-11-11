@@ -1,9 +1,26 @@
-import { ValidateVoucherRequest, ValidateVoucherResponse, SplitVoucherRequest, SplitVoucherResponse } from '@/types/voucher';
+import { ValidateVoucherRequest, ValidateVoucherResponse, SplitVoucherRequest, SplitVoucherResponse, RedeemVoucherRequest } from '@/types/voucher';
 
 const API_BASE_URL = '/api-split/vouchersplitservice/v1';
 const ALTERNATIVE_API_URL = '/api/v2/trade/voucher/variable/vouchers';
-const TOKEN_BASE_URL = 'https://api.qa.bluelabeltelecoms.co.za';
+const TOKEN_BASE_URL = 'https://api.qa.bltelecoms.net';
 const TOKEN_URL = '/token';
+
+export const redeemVoucher = async (request: RedeemVoucherRequest): Promise<any> => {
+  const response = await fetch('http://localhost:3001/api/redeem-voucher', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Network error' }));
+    throw new Error(errorData.error || `HTTP ${response.status}`);
+  }
+
+  return response.json();
+};
 
 // Read Client ID and Secret from environment variables
 const CLIENT_ID = import.meta.env.VITE_CLIENT_ID;

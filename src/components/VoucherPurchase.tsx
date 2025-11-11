@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { purchaseVoucher } from '@/services/voucherApi';
+import { RedeemSuccess } from './RedeemSuccess';
+import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Copy, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const denominations = [10, 20, 50, 100, 200, 500, 1000, 2000];
 
@@ -23,10 +31,40 @@ const VoucherPurchase: React.FC<{
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [voucher, setVoucher] = useState<any>(null);
+  const [redemptionResult, setRedemptionResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const handleDenominationClick = (value: number) => {
     setAmount(value.toString());
+  };
+
+  // Format token into groups of 4 and force two groups per line for a neat 2-line display
+  const formatToken = (token: string) => {
+    if (!token) return '';
+    return token.replace(/(.{4})/g, '$1 ').trim();
+  };
+
+  const copyToken = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({ title: 'Copied', description: 'Token copied to clipboard' });
+    }).catch(() => {
+      toast({ title: 'Error', description: 'Failed to copy to clipboard', variant: 'destructive' });
+    });
+  };
+
+  const handleShare = async (voucher: any) => {
+    const shareText = `Voucher\nToken: ${voucher.token}\nAmount: R${(voucher.amount/100).toFixed(2)}\nSerial: ${voucher.serialNumber}\nReference: ${voucher.reference}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Voucher', text: shareText });
+      } catch (err) {
+        toast({ title: 'Share cancelled', description: '', variant: 'destructive' });
+      }
+    } else {
+      navigator.clipboard.writeText(shareText);
+      toast({ title: 'Copied', description: 'Voucher details copied to clipboard' });
+    }
   };
 
   const handlePurchase = async () => {
@@ -38,6 +76,23 @@ const VoucherPurchase: React.FC<{
     }
     setLoading(true);
     try {
+      // If user is logged in, ensure they have enough wallet balance
+      const current = JSON.parse(localStorage.getItem('currentUser') || 'null');
+      const costCents = Math.round(amt * 100);
+      if (current && current.phone) {
+        try {
+          const users = JSON.parse(localStorage.getItem('users') || '[]');
+          const idx = users.findIndex((u: any) => u.phone === current.phone);
+          const userWallet = idx !== -1 ? (users[idx].wallet || 0) : (current.wallet || 0);
+          if (userWallet < costCents) {
+            setError('Insufficient funds in wallet. Please add funds or choose a smaller amount.');
+            setLoading(false);
+            return;
+          }
+        } catch (e) {
+          // ignore and proceed as guest
+        }
+      }
       const now = new Date();
       const requestId = generateRequestId();
       const response = await purchaseVoucher({
@@ -45,6 +100,46 @@ const VoucherPurchase: React.FC<{
         requestId,
       });
       setVoucher(response);
+      // Deduct wallet funds for logged-in user (only after successful purchase)
+      try {
+        const currentAfter = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        const cost = Math.round(amt * 100);
+        if (currentAfter && currentAfter.phone) {
+          const users = JSON.parse(localStorage.getItem('users') || '[]');
+          const idx = users.findIndex((u: any) => u.phone === currentAfter.phone);
+          if (idx !== -1) {
+            users[idx].wallet = (users[idx].wallet || 0) - cost;
+            localStorage.setItem('users', JSON.stringify(users));
+            const updatedCurrent = { ...currentAfter, wallet: users[idx].wallet };
+            localStorage.setItem('currentUser', JSON.stringify(updatedCurrent));
+            window.dispatchEvent(new CustomEvent('user-updated', { detail: updatedCurrent }));
+            toast({ title: 'Wallet Charged', description: `R${(cost/100).toFixed(2)} deducted from wallet` });
+          } else {
+            // user not found in users array; update currentUser only
+            const updatedCurrent = { ...currentAfter, wallet: (currentAfter.wallet || 0) - cost };
+            localStorage.setItem('currentUser', JSON.stringify(updatedCurrent));
+            window.dispatchEvent(new CustomEvent('user-updated', { detail: updatedCurrent }));
+            toast({ title: 'Wallet Charged', description: `R${(cost/100).toFixed(2)} deducted from wallet` });
+          }
+        }
+      } catch (e) {
+        // ignore wallet update errors
+      }
+      // Save purchase to history
+      try {
+        const history = JSON.parse(localStorage.getItem('voucherHistory') || '[]');
+        history.push({
+          type: 'purchase',
+          serialNumber: response.serialNumber,
+          amount: response.amount,
+          token: response.token,
+          reference: response.reference,
+          expiryDateTime: response.expiryDateTime,
+          status: 'Active',
+          checkedAt: new Date().toISOString(),
+        });
+        localStorage.setItem('voucherHistory', JSON.stringify(history));
+      } catch {}
       toast({ title: 'Success', description: 'Voucher purchased successfully!' });
     } catch (e: any) {
       setError(e.message || 'Failed to purchase voucher.');
@@ -60,33 +155,72 @@ const VoucherPurchase: React.FC<{
           <CardTitle className="text-3xl font-extrabold text-center text-white tracking-wide">Purchase Voucher</CardTitle>
         </CardHeader>
         <CardContent className="p-8 flex flex-col items-center">
-          {voucher ? (
+          {redemptionResult ? (
+            <div className="w-full">
+              <RedeemSuccess
+                amount={redemptionResult.amount / 100}
+                replacementVoucher={redemptionResult.replacementVoucher}
+                onDone={() => { setRedemptionResult(null); setVoucher(null); setAmount(''); }}
+              />
+            </div>
+          ) : voucher ? (
             <div className="text-center space-y-4">
               <CheckCircle className="mx-auto text-green-500" size={48} />
               <div className="text-xl font-semibold text-green-700">Voucher purchased successfully!</div>
               <div className="bg-gray-50 rounded-lg p-4 text-left shadow-inner">
                 <div><strong>Amount:</strong> R{(voucher.amount / 100).toFixed(2)}</div>
-                <div><strong>Token:</strong> {voucher.token}</div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <strong>Token:</strong>
+                    <span className="font-mono font-bold text-base text-gray-900 select-all bg-gray-100 rounded px-2 py-1 whitespace-nowrap">{formatToken(voucher.token)}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => copyToken(voucher.token)} className="h-6 px-2 text-xs" title="Copy Token">
+                      <Copy className="h-3 w-3 mr-1" /> Copy
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleShare(voucher)} className="h-6 px-2 text-xs">
+                      <span role="img" aria-label="Share" className="text-sm">🔗</span> Share
+                    </Button>
+                  </div>
+                </div>
                 <div><strong>Serial Number:</strong> {voucher.serialNumber}</div>
                 <div><strong>Expiry:</strong> {voucher.expiryDateTime ? new Date(voucher.expiryDateTime).toLocaleDateString() : '-'}</div>
                 <div><strong>Reference:</strong> {voucher.reference}</div>
               </div>
-              <Button onClick={() => { setVoucher(null); setAmount(''); }}>Purchase Another</Button>
-              {onRedeemAirtimeDirect && voucher.token && (
-                <Button variant="destructive" onClick={() => onRedeemAirtimeDirect(voucher.token, voucher.amount)}>
-                  Redeem Now for Airtime
-                </Button>
-              )}
-              {onRedeemElectricityDirect && voucher.token && (
-                <Button variant="default" onClick={() => onRedeemElectricityDirect(voucher.token, voucher.amount)}>
-                  Redeem Now for Electricity
-                </Button>
-              )}
-              {onRedeemBetwayDirect && voucher.token && (
-                <Button variant="secondary" onClick={() => onRedeemBetwayDirect(voucher.token, voucher.amount)}>
-                  Top Up Betway Now
-                </Button>
-              )}
+              <div className="flex justify-center gap-3">
+                <Button onClick={() => { setVoucher(null); setAmount(''); }}>Purchase Another</Button>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="default" className="inline-flex items-center">
+                      Redeem Voucher
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => {
+                      navigate('/redeem', { state: { token: voucher.token, amount: voucher.amount } });
+                    }}>
+                      Redeem Voucher
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      onRedeemAirtimeDirect?.(voucher.token, voucher.amount);
+                    }}>
+                      Redeem for Airtime
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      onRedeemElectricityDirect?.(voucher.token, voucher.amount);
+                    }}>
+                      Redeem for Electricity
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      onRedeemBetwayDirect?.(voucher.token, voucher.amount);
+                    }}>
+                      Top Up Betway
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           ) : (
             <>

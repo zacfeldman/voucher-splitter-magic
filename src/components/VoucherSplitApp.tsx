@@ -15,13 +15,17 @@ import VoucherPurchase from './VoucherPurchase';
 import VoucherAirtimeRedeem from './VoucherAirtimeRedeem';
 import VoucherElectricityRedeem from './VoucherElectricityRedeem';
 import VoucherBetwayRedeem from './VoucherBetwayRedeem';
+import { VoucherRedeem } from './VoucherRedeem';
 
-type AppStep = 'landing' | 'validate' | 'split' | 'results' | 'balance' | 'history' | 'login' | 'purchase' | 'airtime' | 'airtime-direct' | 'electricity' | 'electricity-direct' | 'betway' | 'betway-direct';
+type AppStep = 'landing' | 'validate' | 'split' | 'results' | 'balance' | 'history' | 'login' | 'purchase' | 'airtime' | 'airtime-direct' | 'electricity' | 'electricity-direct' | 'betway' | 'betway-direct' | 'redeem';
 
 // Vite provides import.meta.env for environment variables
 const isTestMode = import.meta.env.VITE_TEST_MODE === 'true';
 
 const VoucherSplitApp: React.FC = () => {
+  const handleGoToRedeem = () => {
+    setCurrentStep('redeem');
+  };
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [loadingAuth, setLoadingAuth] = useState<boolean>(true);
   const [user, setUser] = useState<{ phone: string } | null>(null);
@@ -34,13 +38,30 @@ const VoucherSplitApp: React.FC = () => {
   }, []);
 
   const handleLogin = (user: { phone: string }) => {
-    setUser(user);
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    try {
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const idx = users.findIndex((u: any) => u.phone === user.phone);
+      const withWallet = idx !== -1 ? { phone: user.phone, wallet: users[idx].wallet || 0 } : { phone: user.phone };
+      setUser(withWallet);
+      localStorage.setItem('currentUser', JSON.stringify(withWallet));
+    } catch (e) {
+      setUser(user);
+      localStorage.setItem('currentUser', JSON.stringify(user));
+    }
     setShowRegister(false);
   };
   const handleRegister = (user: { phone: string }) => {
-    setUser(user);
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    try {
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const idx = users.findIndex((u: any) => u.phone === user.phone);
+      const wallet = idx !== -1 ? users[idx].wallet || 0 : 0;
+      const withWallet = { phone: user.phone, wallet };
+      setUser(withWallet);
+      localStorage.setItem('currentUser', JSON.stringify(withWallet));
+    } catch (e) {
+      setUser(user);
+      localStorage.setItem('currentUser', JSON.stringify(user));
+    }
     setShowRegister(false);
   };
   const handleLogout = () => {
@@ -281,6 +302,7 @@ const VoucherSplitApp: React.FC = () => {
               onRedeemAirtime={handleGoToAirtime}
               onRedeemElectricity={handleGoToElectricity}
               onRedeemBetway={handleGoToBetway}
+              onRedeemVoucher={handleGoToRedeem}
             />
           ) : currentStep === 'validate' && (
             <VoucherValidator onVoucherValidated={handleVoucherValidated} authToken={authToken} onBack={handleBack} />
@@ -331,6 +353,9 @@ const VoucherSplitApp: React.FC = () => {
           )}
           {currentStep === 'betway-direct' && (
             <VoucherBetwayRedeem onBack={handleBack} skipCheckStatus prefillPin={betwayDirectPin} prefillAmount={betwayDirectAmount} />
+          )}
+          {currentStep === 'redeem' && (
+            <VoucherRedeem onBack={handleBack} />
           )}
         </div>
       </div>
